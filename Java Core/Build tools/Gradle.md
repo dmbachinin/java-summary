@@ -1,5 +1,0 @@
-# СОДЕРЖАНИЕ:
-
-- [Gradle](#gradel)
-
-# Gradle
