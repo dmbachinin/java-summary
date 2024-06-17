@@ -194,6 +194,16 @@ mvn surefire:test # Плагин Surefire используется для вып
 ```xml
    <!-- ... -->
    <build> <!-- Содержит информацию, связанную со сборкой проекта -->
+
+      <resources>
+         <resource>
+            <directory>src/main/resources</directory> <!-- Копирование директории с ресурсами в папку сборки -->
+            <includes>
+               <include>**/*</include>
+            </includes>
+         </resource>
+      </resources>
+
       <plugins> <!-- Корневой элемент для всех плагинов сборки -->
          <plugin> <!-- Описывает один плагин -->
                <groupId>org.apache.maven.plugins</groupId> <!-- Групповой идентификатор. Это уникальный идентификатор группы или организации, которая разрабатывает плагин -->
