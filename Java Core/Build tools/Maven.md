@@ -26,6 +26,14 @@
    - [maven-enforcer-plugin](#maven-enforcer-plugin-orgapachemavenplugins) - **Налагает ограничения и проверяет, соответствуют ли они правилам**
    - [maven-war-plugin](#maven-war-plugin-orgapachemavenplugins) - **Используется для создания веб-архивов (WAR)**
    - [appassembler-maven-plugin](#appassembler-maven-plugin-orgcodehausmojo) - **Генерация скриптов для запуска проектов**
+   - [maven-shade-plugin](#maven-shade-plugin-orgapachemavenplugins) - **Позволяет укаповать проект в fat jar (uber jar)**
+      - [Что такое META-INF?](#что-такое-meta-inf)
+         - [Для чего нужен каталог META-INF?](#для-чего-нужен-каталог-meta-inf)
+         - [Основные файлы и подкаталоги в META-INF](#основные-файлы-и-подкаталоги-в-meta-inf)
+         - [Кто создает каталог META-INF?](#кто-создает-каталог-meta-inf)
+         - [Использование каталога META-INF](#использование-каталога-meta-inf)
+      - [Для чего исключать подписи в блоке `filters`](#для-чего-исключать-подписи-в-блоке-filters)
+      - [Типы параметров `implementation` в конфигурации `transformer`](#типы-параметров-implementation-в-конфигурации-transformer)
 
 ## [Дополнительная информация](#дополнительная-информация-1)
    - [Семантическое версионирование](#семантическое-версионирование-semantic-versioning-semver)
@@ -692,6 +700,189 @@ mvn surefire:test # Плагин Surefire используется для вып
          </execution>
       </executions>
    </plugin>
+```
+
+### maven-shade-plugin (org.apache.maven.plugins)
+
+Назначение: `Позволяет укаповать проект в fat jar (uber jar)`
+
+`Maven Shade Plugin` — мощный плагин для Apache Maven, который используется для упаковки всех зависимостей проекта в один исполняемый JAR файл. Он поддерживает множество настроек и конфигураций, которые позволяют адаптировать процесс создания fat JAR файла под ваши нужды. Рассмотрим подробнее параметры настройки Maven Shade Plugin.
+
+**Пример подключения**
+```xml
+   <build>
+      <plugins>
+         <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-shade-plugin</artifactId>
+               <version>3.2.4</version>
+               <executions>
+                  <execution>
+                     <phase>package</phase>
+                     <goals>
+                           <goal>shade</goal>
+                     </goals>
+                     <configuration>
+                           <transformers> <!-- Используются для модификации содержимого JAR файла, например, для изменения манифеста или объединения ресурсов -->
+                              <!-- Изменение манифеста -->
+                              <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"> <!-- Изменяет файл манифеста JAR. В данном примере устанавливает главный класс -->
+                                 <mainClass>com.example.Main</mainClass> 
+                              </transformer>
+                              <!-- Объединение свойств -->
+                              <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer"> <!-- Объединяет ресурсы с одинаковыми именами. Например, полезно для объединения файлов свойств Spring -->
+                                 <resource>META-INF/spring.handlers</resource> 
+                              </transformer>
+                              <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                 <resource>META-INF/spring.schemas</resource>
+                              </transformer>
+                           </transformers>
+
+                           <!-- Настройка фильтров -->
+                           <filters> <!-- Позволяют исключать или включать определенные файлы из зависимостей -->
+                              <filter>
+                                 <artifact>*:*</artifact> <!-- Задает шаблон для включения/исключения артефактов -->
+                                 <excludes> <!-- Исключает файлы из включаемых артефактов. В данном примере исключаются файлы с цифровыми подписями -->
+                                       <exclude>META-INF/*.SF</exclude> <!-- Исключает все файлы с расширением .SF в каталоге META-INF. Файлы .SF содержат подписи JAR файла -->
+                                       <exclude>META-INF/*.DSA</exclude> <!-- Исключает все файлы с расширением .DSA в каталоге META-INF. Файлы .DSA содержат цифровые подписи и сертификаты -->
+                                       <exclude>META-INF/*.RSA</exclude> <!-- Исключает все файлы с расширением .RSA в каталоге META-INF. Файлы .RSA также используются для хранения цифровых подписей и сертификатов -->
+                                 </excludes>
+                              </filter>
+                           </filters>
+
+                           <!-- Настройка включаемых и исключаемых артефактов -->
+                           <artifactSet> <!-- Позволяет указать конкретные артефакты (зависимости), которые должны быть включены или исключены из итогового JAR файла -->
+                              <includes> <!-- Указывает артефакты, которые должны быть включены -->
+                                 <include>com.example:my-dependency</include>
+                              </includes>
+                              <excludes>
+                                 <exclude>org.unwanted:unwanted-dependency</exclude>
+                              </excludes> <!-- Указывает артефакты, которые должны быть исключены -->
+                           </artifactSet>
+
+                           <!-- Настройка переименования пакетов -->
+                           <relocations> <!-- Позволяет переименовывать (relocate) пакеты, чтобы избежать конфликтов между зависимостями -->
+                              <relocation>
+                                 <pattern>org.apache.commons</pattern> <!-- Паттерн для пакетов, которые нужно переименовать -->
+                                 <shadedPattern>com.example.shaded.org.apache.commons</shadedPattern> <!-- Новое имя для переименованных пакетов. В данном примере все пакеты org.apache.commons будут переименованы в com.example.shaded.org.apache.commons -->
+                              </relocation>
+                           </relocations>
+                     </configuration>
+                  </execution>
+               </executions>
+         </plugin>
+      </plugins>
+   </build>
+```
+
+### Что такое META-INF?
+
+`META-INF` — это специальный каталог в JAR файлах, который содержит метаданные о содержимом архива. Эти метаданные используются различными инструментами и библиотеками для обеспечения правильной работы JAR файла. Каталог `META-INF` стандартизирован и поддерживается JVM и многими фреймворками и инструментами.
+
+#### Для чего нужен каталог META-INF?
+
+Каталог `META-INF` служит для хранения различных метаданных, которые могут быть использованы во время выполнения, сборки или проверки целостности JAR файла. Эти метаданные могут включать информацию о версиях, цифровых подписях, конфигурациях сервисов и многое другое.
+
+#### Основные файлы и подкаталоги в META-INF
+
+1. **MANIFEST.MF**: Файл манифеста JAR файла.
+   - **Содержимое**: Манифест содержит ключи и значения, которые описывают метаданные JAR файла, такие как версии, главный класс, пути к зависимостям и др.
+   - **Пример содержимого**:
+     ```plaintext
+     Manifest-Version: 1.0
+     Main-Class: com.example.Main
+     Class-Path: lib/dependency1.jar lib/dependency2.jar
+     ```
+
+2. **LICENSE** и **NOTICE**: Лицензионные файлы.
+   - **Содержимое**: Информация о лицензии и уведомления о правах, которые должны быть включены в дистрибутив JAR файла.
+   - **Пример содержимого LICENSE**:
+     ```plaintext
+     Apache License
+     Version 2.0, January 2004
+     http://www.apache.org/licenses/
+     ```
+
+3. **services/**: Каталог для Java SPI (Service Provider Interface).
+   - **Содержимое**: Файлы с именами интерфейсов и классами, реализующими эти интерфейсы. Используется для регистрации сервисов в Java.
+   - **Пример содержимого**: Файл `META-INF/services/java.sql.Driver`, содержащий строку `com.mysql.cj.jdbc.Driver`.
+
+4. **spring.schemas** и **spring.handlers**: Файлы, используемые Spring Framework.
+   - **Содержимое**: Содержат информацию о пользовательских пространств имен XML и обработчиках для них.
+   - **Пример содержимого spring.handlers**:
+     ```plaintext
+     http\://www.springframework.org/schema/mycustom=com.example.MyCustomNamespaceHandler
+     ```
+
+5. **Файлы цифровых подписей**: `*.SF`, `*.DSA`, `*.RSA`
+   - **Содержимое**: Файлы, связанные с цифровыми подписями, обеспечивающими целостность и подлинность JAR файла.
+   - **Пример содержимого**: `META-INF/SIGNATURE.SF`, содержащий информацию о подписанных файлах и хэш-значения.
+
+#### Кто создает каталог META-INF?
+
+Каталог `META-INF` и его содержимое обычно создаются инструментами сборки и пакетирования, такими как Maven, Gradle, Ant, а также Java Development Kit (JDK) утилитами, такими как `jar` и `javac`.
+
+- **Maven**: При сборке проекта Maven создает JAR файл и автоматически добавляет файл `MANIFEST.MF` в каталог `META-INF`.
+- **Gradle**: Похожим образом, Gradle создает JAR файл и добавляет необходимые метаданные в `META-INF`.
+- **JDK**: Утилита `jar` создает `META-INF` и файл `MANIFEST.MF`, если они не предоставлены вручную.
+
+#### Где находится каталог META-INF?
+
+Каталог `META-INF` находится в корне JAR файла. Когда вы распаковываете JAR файл, вы увидите этот каталог наряду с другими пакетами и классами.
+
+#### Пример структуры JAR файла
+
+```
+my-app.jar
+│
+├── META-INF
+│   ├── MANIFEST.MF
+│   ├── LICENSE
+│   ├── NOTICE
+│   ├── services
+│   │   └── java.sql.Driver
+│   ├── spring.handlers
+│   ├── spring.schemas
+│   ├── SIGNATURE.SF
+│   ├── SIGNATURE.DSA
+│   └── SIGNATURE.RSA
+│
+├── com
+│   └── example
+│       ├── Main.class
+│       └── MyCustomNamespaceHandler.class
+└── lib
+    ├── dependency1.jar
+    └── dependency2.jar
+```
+
+#### Использование каталога META-INF
+
+1. **Манифест JAR файла**: Указывается главный класс для запуска приложения, пути к зависимостям и другая информация.
+2. **Лицензионные файлы**: Включают информацию о лицензии, которая обязательна для распространения ПО.
+3. **Java SPI**: Позволяет регистрировать и находить реализации интерфейсов динамически во время выполнения.
+4. **Spring Framework**: Используется для конфигурации кастомных пространств имен и обработчиков.
+5. **Цифровые подписи**: Обеспечивают безопасность и целостность JAR файла.
+
+
+### Для чего исключать подписи в блоке `filters`
+`Цифровые подписи (файлы .SF, .DSA, .RSA)` создаются для обеспечения целостности и подлинности JAR файла. При создании fat JAR файла эти файлы подписей часто становятся некорректными, так как содержимое JAR файла изменяется. Поэтому их исключают, чтобы избежать проблем с некорректными подписями и гарантировать, что итоговый JAR файл можно будет использовать без ошибок, связанных с проверкой цифровых подписей.
+
+### Типы параметров `implementation` в конфигурации `transformer`
+```xml
+
+   <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"> <!-- Изменение манифеста JAR файла (например, установка основного класса) -->
+      <mainClass>com.example.Main</mainClass> <!-- Этот трансформер устанавливает указанный основной класс в манифесте JAR файла, что позволяет запустить JAR как исполняемый файл -->
+   </transformer>
+ 
+   <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer"> <!-- Объединение ресурсов с одинаковыми именами из различных JAR файлов -->
+      <resource>META-INF/spring.handlers</resource> <!-- Этот трансформер объединяет файлы `META-INF/spring.handlers` из всех зависимостей в один файл, который будет включен в итоговый JAR -->
+   </transformer>
+
+   <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/> <!-- Этот трансформер объединяет все файлы, находящиеся в `META-INF/services`, чтобы обеспечить корректную работу механизма сервисов Java -->
+
+   <transformer implementation="org.apache.maven.plugins.shade.resource.DontIncludeResourceTransformer"> <!--  Исключение определенных ресурсов из итогового JAR файла -->
+         <resource>META-INF/DEPENDENCIES</resource> <!-- Этот трансформер исключает файл `META-INF/DEPENDENCIES` из итогового JAR -->
+   </transformer>
 ```
 
 ## Дополнительная информация
