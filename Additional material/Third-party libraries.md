@@ -6,6 +6,9 @@
 
 - [JCommander](#jcommander) - **Обработка параметров командой строки**
 - [JCDP](#jcdp) - **Цветная печать в терминале**
+- [JDBC (PostgreSQL)](#jdbc-postgresql) - **Подключение к PostgreSQL через java**
+    - [Основные методы JDBC](#основные-методы-jdbc)
+    - [Пример использования методов JDBC](#пример-использования-методов-jdbc)
 
 ## JCommander
 
@@ -109,107 +112,3 @@ public class JCDPExample {
 
 **Документация**:
 * https://dialex.github.io/JColor/index-all.html
-
-## JDBC (PostgreSQL)
-
-`JDBC (Java Database Connectivity)` — это стандартный интерфейс API в языке Java, который позволяет взаимодействовать с реляционными базами данных. JDBC предоставляет набор классов и интерфейсов для подключения к базе данных, выполнения SQL-запросов и обработки результатов.
-
-Для работы с PostgreSQL через JDBC вам потребуется драйвер PostgreSQL JDBC. Этот драйвер позволяет Java-приложению взаимодействовать с базой данных PostgreSQL.
-
-По сути JDBC - это стандарт, который реализует каждая база данных, это нужно для того, чтобы не зависеть от конкретной реализации подключенной БД. Также это нужно для того, чтобы для взаимодейстивя с любой базой данных был определен одинаковый интерфейс
-
-**Подключение для Maven:**
-```xml
-    <dependency>
-        <groupId>org.postgresql</groupId>
-        <artifactId>postgresql</artifactId>
-        <version>42.2.5</version>
-    </dependency>
-```
-
-Интерфейс JDBC предоставляет множество методов для выполнения различных операций с базами данных. Основные интерфейсы и их методы включают:
-
-```java
-    // Интерфейс `DriverManager` - Этот интерфейс управляет набором драйверов баз данных
-    static Connection getConnection(String url, String user, String password) // Устанавливает соединение с базой данных по указанному URL, имени пользователя и паролю.
-
-    // Интерфейс `Connection` - Этот интерфейс представляет соединение с конкретной базой данных
-    Statement createStatement(); // Создает объект `Statement` для отправки SQL-запросов в базу данных.
-    PreparedStatement prepareStatement(String sql); // Создает объект `PreparedStatement` для отправки предварительно скомпилированных SQL-запросов.
-    CallableStatement prepareCall(String sql); // Создает объект `CallableStatement` для вызова хранимых процедур.
-    void setAutoCommit(boolean autoCommit); // Устанавливает режим автокоммита транзакций.
-    void commit(); // Выполняет явный коммит текущей транзакции.
-    void rollback(); // Откатывает текущую транзакцию.
-    void close(); // Закрывает соединение с базой данных.
-
-    // Интерфейс `Statement` - Этот интерфейс используется для выполнения SQL-запросов в базу данных
-    ResultSet executeQuery(String sql); // Выполняет SQL-запрос и возвращает объект `ResultSet`, содержащий результаты запроса.
-    int executeUpdate(String sql); // Выполняет SQL-запрос (например, `INSERT`, `UPDATE`, `DELETE`) и возвращает количество затронутых строк.
-    boolean execute(String sql); // Выполняет любой SQL-запрос. Возвращает `true`, если результатом является `ResultSet`.
-    void close(); // Закрывает объект `Statement`.
-
-    // Интерфейс `PreparedStatement` - Этот интерфейс расширяет `Statement` и используется для выполнения предварительно скомпилированных SQL-запросов с параметрами
-    void setInt(int parameterIndex, int x); // Устанавливает значение параметра типа `int`.
-    void setString(int parameterIndex, String x); // Устанавливает значение параметра типа `String`.
-    void setDate(int parameterIndex, Date x); // Устанавливает значение параметра типа `Date`.
-    ResultSet executeQuery(); // Выполняет SQL-запрос и возвращает объект `ResultSet`.
-    int executeUpdate(); // Выполняет SQL-запрос и возвращает количество затронутых строк.
-    boolean execute(); // Выполняет любой SQL-запрос. Возвращает `true`, если результатом является `ResultSet`.
-    void close(); // Закрывает объект `PreparedStatement`.
-
-    // Интерфейс `CallableStatement` - Этот интерфейс расширяет `PreparedStatement` и используется для вызова хранимых процедур
-    void registerOutParameter(int parameterIndex, int sqlType); // Регистрирует выходной параметр.
-    boolean wasNull(); // Проверяет, было ли значение последнего прочитанного параметра SQL NULL.
-    int getInt(int parameterIndex); // Получает значение выходного параметра типа `int`.
-    String getString(int parameterIndex); // Получает значение выходного параметра типа `String`.
-
-    // Интерфейс `ResultSet` - Этот интерфейс используется для получения результатов SQL-запросов
-    boolean next(); // Перемещает курсор на одну строку вперед из текущей позиции.
-    int getInt(int columnIndex); // Возвращает значение указанного столбца как `int`.
-    String getString(int columnIndex); // Возвращает значение указанного столбца как `String`.
-    Date getDate(int columnIndex); // Возвращает значение указанного столбца как `Date`.
-    boolean wasNull(); // Проверяет, было ли значение последней прочитанной колонки SQL NULL.
-    void close(); // Закрывает объект `ResultSet`.
-```
-### Пример использования основных методов:
-
-```java
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-
-public class JDBCExample {
-    public static void main(String[] args) {
-        String url = "jdbc:postgresql://localhost:5432/mydatabase";
-        String user = "myusername";
-        String password = "mypassword";
-
-        try (Connection connection = DriverManager.getConnection(url, user, password);
-             Statement statement = connection.createStatement();
-             PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM mytable WHERE id = ?");
-             ResultSet resultSet = statement.executeQuery("SELECT * FROM mytable")) {
-
-            // Использование Statement
-            while (resultSet.next()) {
-                System.out.println("Column1: " + resultSet.getString(1) + " Column2: " + resultSet.getString(2));
-            }
-
-            // Использование PreparedStatement
-            preparedStatement.setInt(1, 1);
-            try (ResultSet preparedResultSet = preparedStatement.executeQuery()) {
-                while (preparedResultSet.next()) {
-                    System.out.println("Column1: " + preparedResultSet.getString(1) + " Column2: " + preparedResultSet.getString(2));
-                }
-            }
-
-        } catch (SQLException e) {
-            System.out.println("Connection failure: " + e.getMessage());
-        }
-    }
-}
-```
-
-
