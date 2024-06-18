@@ -198,8 +198,9 @@ mvn surefire:test # Плагин Surefire используется для вып
       <resources>
          <resource>
             <directory>src/main/resources</directory> <!-- Копирование директории с ресурсами в папку сборки -->
+            <targetPath>resources</targetPath> <!-- Путь, куда будут копироваться ресурсы -->
             <includes>
-               <include>**/*</include>
+               <include>**/*</include> <!-- Шаблон файлов, которые нужно добавлять -->
             </includes>
          </resource>
       </resources>
