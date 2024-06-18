@@ -124,6 +124,7 @@
         - [TreeMap](#3-treemap)
         - [ConcurrentHashMap](#4-concurrenthashmap)
 - [Optional](#optional)
+    - [Основные методы Optional](#основные-методы-optional)
 ## [Stream API](#stream-api-1)
 
 ## ПРОЧИЕ ССЫЛКИ:
