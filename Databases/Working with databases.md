@@ -7,7 +7,7 @@
 - [java.sql](#javasql)
     - [Основные интерфейсы и методы java.sql](#основные-интерфейсы-и-методы-javasql)
     - [Типы Date, Time, Timestamp в java.sql](#типы-date-time-timestamp-в-javasql)
-- [JDBC (PostgreSQL)](#jdbc-postgresql)
+- [JDBC(PostgreSQL)](#jdbcpostgresql)
 
 
 ## java.sql
@@ -49,6 +49,11 @@
 
     // PreparedStatement - Этот интерфейс расширяет `Statement` и используется для выполнения предварительно скомпилированных SQL-запросов с параметрами
     PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM mytable WHERE id = ?"); // Создает объект `PreparedStatement` для отправки предварительно скомпилированных SQL-запросов
+    PreparedStatement preparedStatement = connection.prepareStatement(
+        "INSERT INTO message(author_id, chatroom_id, text, date) VALUES (?, ?, ?, ?)",
+        Statement.RETURN_GENERATED_KEYS
+    ); // Пример запроса, который возвращает сгенерированный базой данной первичный ключ
+    ResultSet resultSet = preparedStatement.getGeneratedKeys(); // Получить первичный ключ
     preparedStatement.setInt(1, 1); // Устанавливает значение параметра типа int
     ResultSet preparedResultSet = preparedStatement.executeQuery(); // Выполняет SQL-запрос и возвращает объект ResultSet
     int preparedRowsAffected = preparedStatement.executeUpdate(); // Выполняет SQL-запрос и возвращает количество затронутых строк
