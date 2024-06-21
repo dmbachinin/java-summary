@@ -7,7 +7,23 @@
 - [java.sql](#javasql)
     - [Основные интерфейсы и методы java.sql](#основные-интерфейсы-и-методы-javasql)
     - [Типы Date, Time, Timestamp в java.sql](#типы-date-time-timestamp-в-javasql)
-- [JDBC(PostgreSQL)](#jdbcpostgresql)
+- [JDBC(PostgreSQL)](#jdbcpostgresql) - **Для работы с PostgreSQL через JDBC**
+    - [Подключение JDBC(PostgreSQL) для Maven](#подключение-jdbcpostgresql-для-maven)
+- [HikariCP](#hikaricp) — **Это высокопроизводительный JDBC пул соединений для Java**
+    - [Основные преимущества HikariCP](#основные-преимущества-hikaricp)
+    - [Основные функции HikariCP](#основные-функции-hikaricp)
+    - [Подключение HikariCP для Maven](#подключение-hikaricp-для-maven)
+    - [Конфигурация HikariCP](#конфигурация-hikaricp)
+        - [XML-конфигурация HikariCP](#xml-конфигурация-hikaricp)
+        - [Программная конфигурация HikariCP](#программная-конфигурация-hikaricp)
+    - [Пример использования HikariCP](#пример-использования-hikaricp)
+- [HSQLDB (HyperSQL Database)](#hsqldb-hypersql-database) - **Легковесная, быстрая, полностью работающая в памяти СУБД**
+    - [Преимущества HSQLDB](#преимущества-hsqldb)
+    - [Для чего нужна HSQLDB](#для-чего-нужна-hsqldb)
+    - [Подключение HSQLDB для Maven](#подключение-hsqldb-для-maven)
+    - [Пример подключения к базе данных HSQLDB в режиме сервера](#пример-подключения-к-базе-данных-hsqldb-в-режиме-сервера)
+
+
 
 
 ## java.sql
@@ -159,7 +175,7 @@
 
 Для работы с PostgreSQL через JDBC вам потребуется драйвер PostgreSQL JDBC. Этот драйвер позволяет Java-приложению взаимодействовать с базой данных PostgreSQL.
 
-**Подключение для Maven:**
+### Подключение JDBC(PostgreSQL) для Maven
 ```xml
     <dependency>
         <groupId>org.postgresql</groupId>
@@ -184,7 +200,7 @@
 - Конфигурируемое время жизни и тайм-аут соединений.
 - Управление размером пула соединений и авто-расширение.
 
-**Подключение для Maven:**
+### Подключение HikariCP для Maven
 ```xml
     <dependency>
         <groupId>com.zaxxer</groupId>
@@ -197,7 +213,7 @@
 
 Для настройки `HikariCP` с использованием XML-конфигурации, вам потребуется создать и настроить файл конфигурации Spring, в котором будет описана настройка источника данных (DataSource). Обычно такой файл называется `applicationContext.xml` или `datasource-config.xml`, и он размещается в директории src/main/resources вашего проекта.
 
-#### XML-конфигурация HikariCP:
+#### XML-конфигурация HikariCP
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -240,7 +256,7 @@ public class DataSourceConfig {
 }
 ```
 
-### 4. Пример использования HikariCP
+### Пример использования HikariCP
 
 ```java
 import com.zaxxer.hikari.HikariConfig;
@@ -276,4 +292,66 @@ public class HikariCPExample {
         }
     }
 }
+```
+
+## HSQLDB (HyperSQL Database)
+
+`HSQLDB (HyperSQL Database)` — это реляционная система управления базами данных, написанная на Java. Это легковесная, быстрая, полностью работающая в памяти СУБД, которая также поддерживает режимы дискового хранения и сервера. HSQLDB часто **используется в тестировочных средах и для разработки из-за своей скорости и простоты в использовании**. Она может быть встроена в Java-приложения или использоваться как отдельный сервер.
+
+### Преимущества HSQLDB:
+
+1. **Быстрая и легковесная**: Очень мало весит и предоставляет высокую производительность для операций с базой данных.
+2. **Полностью написана на Java**: Интеграция с Java-приложениями происходит очень естественно и просто.
+3. **Поддержка стандартов SQL**: Поддерживает большую часть SQL стандартов.
+4. **Встроенный и серверный режимы**: Может быть запущена встроенно в приложение или как сервер.
+5. **Многофункциональная**: Поддерживает режимы работы в памяти и на диске.
+
+### Для чего нужна HSQLDB
+
+HSQLDB часто используется для:
+- Разработки и тестирования Java-приложений, где не требуется сложная настройка и поддержка больших объемов данных.
+- Обучения и экспериментов с SQL и базами данных.
+- Применения в малых проектах или как локальная база данных для отдельных клиентских приложений.
+
+### Подключение HSQLDB для Maven
+
+```xml
+    <dependency>
+        <groupId>org.hsqldb</groupId>
+        <artifactId>hsqldb</artifactId>
+        <version>2.6.0</version>
+    </dependency>
+```
+
+### Пример подключения к базе данных HSQLDB в режиме сервера
+
+В этом примере мы подключаемся к серверу HSQLDB, работающему на локальном компьютере (`localhost`) и слушающему порт 9001.
+```java
+   import java.sql.Connection;
+   import java.sql.DriverManager;
+   import java.sql.SQLException;
+
+   public class HsqlExample {
+       public static void main(String[] args) {
+           Connection con = null;
+           try {
+               // Загрузка драйвера HSQLDB
+               Class.forName("org.hsqldb.jdbc.JDBCDriver");
+               // Подключение к базе данных
+               con = DriverManager.getConnection("jdbc:hsqldb:hsql://localhost/mydb", "SA", "");
+               System.out.println("Подключено к базе данных.");
+               // Здесь можно выполнять запросы к базе данных
+           } catch (ClassNotFoundException e) {
+               System.err.println("Драйвер не найден.");
+           } catch (SQLException e) {
+               System.err.println("Ошибка SQL: " + e.getMessage());
+           } finally {
+               try {
+                   if (con != null) con.close();
+               } catch (SQLException e) {
+                   System.err.println("Ошибка при закрытии соединения: " + e.getMessage());
+               }
+           }
+       }
+   }
 ```
