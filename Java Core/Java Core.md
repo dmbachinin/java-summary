@@ -64,6 +64,11 @@
 - [Интерфейсы](#интерфейсы)
 - [Функциональные интерфейсы](#функциональные-интерфейсы)
 ## [Аннотации](#аннотации-1)
+- [Оснонвные аннотации](#оснонвные-аннотации)
+- [Написание своих аннотаций](#написание-своих-аннотаций)
+    - [Мета-аннотации](#мета-аннотации)
+    - [Пример написания собственных аннотаций](#пример-написания-собственных-аннотаций)
+- [AbstractProcessor](#abstractprocessor)
 ## [Обработка ошибок](#обработка-ошибок-1)
 ## [Логирование](#логирование-1)
 ## [Работа с файловой системой](#работа-с-файловой-системой-1)
@@ -1347,6 +1352,18 @@ Java предоставляет несколько мета-аннотаций, 
     // RUNTIME - Аннотации с политикой RUNTIME сохраняются в байт-коде и доступны во время выполнения через рефлексию. Это позволяет программам считывать аннотации и использовать их для динамического поведения (Используются для аннотаций, которые должны быть доступны во время выполнения для выполнения задач, таких как валидация, конфигурация или внедрение зависимостей.)
     
     @Target(ElementType.METHOD) // Указывает, к чему может применяться аннотация (типы элементов: классы, методы, поля и т.д.)
+    /* Возможные значения для ElementType
+        TYPE - Классы, интерфейсы (включая аннотации), перечисления
+        FIELD - Поля (включая перечисляемые константы)
+        METHOD - Методы
+        PARAMETER - Параметры методов
+        CONSTRUCTOR - Конструкторы
+        LOCAL_VARIABLE - Локальные переменные
+        ANNOTATION_TYPE - Другие аннотации
+        PACKAGE - Пакеты
+        TYPE_PARAMETER - Параметры обобщенных типов
+        TYPE_USE - Любое использование типов
+    */
 
     @Inherited // Указывает, что аннотация может наследоваться подклассами
 
@@ -1429,8 +1446,144 @@ Java предоставляет несколько мета-аннотаций, 
             }
         }
     }
+```
 
+### AbstractProcessor
 
+`AbstractProcessor` в Java является абстрактным классом, который предоставляет основу для создания аннотаций процессоров. Процессоры аннотаций используются для обработки аннотаций во время компиляции кода. Этот механизм позволяет разработчикам анализировать и изменять исходный код на основе аннотаций.
+
+#### Оснонвные методы
+```java
+    @Override
+    public synchronized void init(ProcessingEnvironment processingEnv) { // Вызывается один раз при инициализации процессора
+        super.init(processingEnv);         // Инициализация процессора
+    }
+    //  * Используется для настройки процессора и получения ProcessingEnvironment, который предоставляет доступ к различным утилитам, таким как Filer, Messager и Elements
+
+    @Override
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) { // Основной метод для обработки аннотаций. Метод принимает два параметра: набор аннотаций для обработки и окружение текущего раунда обработки (RoundEnvironment)
+        for (Element element : roundEnv.getElementsAnnotatedWith(ExampleAnnotation.class)) {
+            // Обработка аннотированных элементов
+        }
+        return true; // Возвращает true, если аннотации были обработаны этим процессором, иначе false
+    }
+    //  * Вызывается для каждой компиляционной единицы, которая содержит аннотированные элементы
+
+    @Override
+    public Set<String> getSupportedAnnotationTypes() { // Возвращает набор типов аннотаций, которые поддерживаются этим процессором
+        return Collections.singleton(ExampleAnnotation.class.getCanonicalName());
+    }
+    //  * Может быть заменен аннотацией @SupportedAnnotationTypes
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() { // Возвращает версию исходного кода Java, поддерживаемую этим процессором
+        return SourceVersion.latestSupported();
+    }
+    //  * Может быть заменен аннотацией @SupportedSourceVersion
+
+    @Override
+    public Set<String> getSupportedOptions() { // Возвращает набор имен опций конфигурации, поддерживаемых этим процессором
+        return Collections.singleton("debug");
+    }
+    //  * Может быть заменен аннотацией @SupportedOptions
+```
+
+#### Пример процессора аннотаций
+```java
+    import com.example.ExampleAnnotation;
+    import javax.annotation.processing.AbstractProcessor;
+    import javax.annotation.processing.Processor;
+    import javax.annotation.processing.RoundEnvironment;
+    import javax.annotation.processing.SupportedAnnotationTypes;
+    import javax.annotation.processing.SupportedSourceVersion;
+    import javax.lang.model.SourceVersion;
+    import javax.lang.model.element.Element;
+    import javax.lang.model.element.TypeElement;
+    import java.io.IOException;
+    import java.io.Writer;
+    import java.util.Set;
+    import javax.tools.Diagnostic;
+    import javax.tools.JavaFileObject;
+
+    @SupportedAnnotationTypes("com.example.ExampleAnnotation") // Определяет пользовательскую аннотацию, которая будет обрабатываться процессором.
+    @SupportedSourceVersion(SourceVersion.RELEASE_8) // Указывает, что процессор поддерживает версию исходного кода Java 8 (или более позднюю)
+    public class ExampleProcessor extends AbstractProcessor {
+
+        @Override
+        public synchronized void init(ProcessingEnvironment processingEnv) { // Инициализация процессора
+            super.init(processingEnv);
+        }
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            for (Element element : roundEnv.getElementsAnnotatedWith(ExampleAnnotation.class)) { // Проходит по всем элементам, аннотированным ExampleAnnotation. Метод getElementsAnnotatedWith возвращает набор элементов, которые помечены данной аннотацией в текущем раунде компиляции
+                String className = element.getSimpleName().toString(); // Получает простое имя аннотированного элемента и преобразует его в строку. Это имя будет использоваться для создания имени нового Java-файла
+                try {
+                    JavaFileObject file = processingEnv.getFiler().createSourceFile("Generated" + className); // Создает новый файл с именем Generated + className (например, если класс называется MyClass, то файл будет называться GeneratedMyClass.java). Метод createSourceFile из объекта Filer используется для создания нового исходного файла Java.
+                    try (Writer writer = file.openWriter()) { // Запись содержимого в файл
+                        writer.write("package com.example;\n");
+                        writer.write("public class Generated" + className + " {\n");
+                        writer.write("    // This class is generated by ExampleProcessor\n");
+                        writer.write("}\n");
+                    }
+                } catch (IOException e) {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.toString());
+                }
+            }
+            return true; // Аннотации обработаны этим процессором
+        }
+    }
+```
+
+####  Обеспечение правильной работы процессоров аннотаций
+
+`maven-compiler-plugin` используется для компиляции Java-кода. Настройки этого плагина могут быть изменены для поддержки аннотаций и указания процессоров аннотаций. Вот пример настройки:
+```xml
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>8</source> <!-- Указываем версию исходного кода Java -->
+                    <target>8</target> <!-- Указываем версию целевого кода Java -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>com.google.auto.service</groupId>
+                            <artifactId>auto-service</artifactId>
+                            <version>1.0-rc7</version> <!-- Версия зависимости auto-service -->
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+```
+
+Библиотека `auto-service` от Google используется для автоматической регистрации процессоров аннотаций. Она позволяет упростить процесс создания файлов META-INF/services, которые необходимы для регистрации процессоров аннотаций.
+**Поключение через Maven**
+```xml
+    <dependencies>
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+            <version>1.0-rc7</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+```
+
+**Пример использования**
+```java
+
+import com.google.auto.service.AutoService;
+
+@AutoService(Processor.class) // Автоматическая регистрация процессора аннотаций
+@SupportedAnnotationTypes("com.example.ExampleAnnotation")
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
+public class ExampleProcessor extends AbstractProcessor {...}
 ```
 
 ## Обработка ошибок

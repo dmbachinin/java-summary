@@ -16,6 +16,11 @@
     - [Влияние ClassLoader на загрузку классов](#влияние-classloader-на-загрузку-классов)
     - [Особенности работы методов getResource и getResourceAsStream](#особенности-работы-методов-getresource-и-getresourceasstream)
 
+## [Reflections](#reflections-1)
+- [Подключение через Maven](#подключение-через-maven)
+- [Оснонвые методы](#оснонвые-методы)
+
+
 ## Java Reflection API
 
 `Java Reflection API` — это мощный механизм, который позволяет программам на Java исследовать и манипулировать своим собственным кодом (например, классы, методы, поля) во время выполнения. Используя Reflection API, можно динамически создавать объекты, вызывать методы, изменять поля и получать информацию о классах и их структурах
@@ -115,8 +120,8 @@
 ```java
     Method method = clazz.getMethod("sayWord", String.class); // Возвращает публичный метод с указанным именем и типами параметров
     Method method = clazz.getDeclaredMethod("privateMethod", String.class); // Возвращает метод с указанным именем и типами параметров, включая приватные и защищенные методы
-    Method[] methods = clazz.getMethods(); // Возвращает массив всех публичных методов класса
-    Method[] methods = clazz.getDeclaredMethods(); // Возвращает массив объектов Method, представляющих все объявленные методы класса, включая приватные
+    Method[] methods = clazz.getMethods(); // Возвращает массив всех публичных методов класса (в том числе все унаследованные методы)
+    Method[] methods = clazz.getDeclaredMethods(); // Возвращает массив объектов Method, представляющих все объявленные методы класса, включая приватные (не возвращает методы, унаследованные от супер класса)
 
     boolean accessible = method.isAccessible(); // Проверяет, доступен ли метод (игнорирует ли он проверку доступа)
     method.setAccessible(true); // Устанавливает доступность метода, позволяя или запрещая доступ к нему независимо от модификатора доступа
@@ -240,3 +245,45 @@ java -cp bin:lib/mylib.jar com.example.MyClass # В данном примере 
 
 4. **Изоляция и безопасность**:
 - Использование загрузчиков классов для загрузки ресурсов обеспечивает изоляцию и безопасность. Ресурсы могут быть загружены только теми загрузчиками классов, которые имеют к ним доступ, что предотвращает несанкционированный доступ.
+
+## Reflections
+
+Библиотека `Reflections` предоставляет множество методов для работы с рефлексией, которые значительно упрощают задачу поиска классов, методов, полей и аннотаций в проекте.
+
+### Подключение через Maven
+```java
+    <dependency>
+        <groupId>org.reflections</groupId>
+        <artifactId>reflections</artifactId>
+        <version>0.10.2</version>
+    </dependency>
+```
+
+### Оснонвые методы
+```java
+    import org.reflections.Reflections;
+    import org.reflections.scanners.Scanners;
+
+    Reflections reflections = new Reflections("com.example", Scanners); // Инициализация Reflections для указанного пакета c указанными сканерами 
+
+    // Scanners — это утилиты в библиотеке Reflections, которые используются для определения, какие элементы будут сканироваться в процессе анализа. Эти параметры задают, какие типы данных будут собираться и анализироваться библиотекой Reflections
+    //  Вот основные сканеры, которые можно использовать:
+    //  Scanners.SubTypes - Сканирует и находит все подклассы и реализации интерфейсов
+    //  Scanners.TypesAnnotated - Сканирует и находит все классы, аннотированные определенными аннотациями
+    //  Scanners.MethodsAnnotated - Сканирует и находит все методы, аннотированные определенными аннотациями
+    //  Scanners.FieldsAnnotated - Сканирует и находит все поля, аннотированные определенными аннотациями
+
+    Reflections reflections = new Reflections("com.example"); // Инициализация Reflections для указанного пакета c настройками по умолчанию
+    // Сканеры по умолчанию: Scanners.SubTypes, Scanners.TypesAnnotated
+
+    Reflections reflections = new Reflections(packageName, new SubTypesScanner(false)) // Данная инициализация помогает найти все классы в указанном пакете при вызове getSubTypesOf
+
+
+    Set<Class<? extends MyInterface>> subTypes = reflections.getSubTypesOf(MyInterface.class); // Ищет все подклассы указанного класса или интерфейса
+    Set<Class<?>> allClasses = reflections.getSubTypesOf(Object.class); // Получить все классы из пакета 
+    Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(MyAnnotation.class); // Ищет все классы, аннотированные указанной аннотацией
+    Set<Method> annotatedMethods = reflections.getMethodsAnnotatedWith(MyMethodAnnotation.class); // Ищет все методы, аннотированные указанной аннотацией
+    Set<Field> annotatedFields = reflections.getFieldsAnnotatedWith(MyFieldAnnotation.class); // Ищет все поля, аннотированные указанной аннотацией
+    Set<Constructor> annotatedConstructors = reflections.getConstructorsAnnotatedWith(MyConstructorAnnotation.class); // Ищет все конструкторы, аннотированные указанной аннотацией
+    Set<String> resources = reflections.getResources(Pattern.compile(".*\\.xml")); // Ищет все ресурсы (файлы) в classpath, соответствующие указанному шаблону
+```
