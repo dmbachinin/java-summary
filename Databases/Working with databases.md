@@ -15,6 +15,7 @@
     - [Подключение HikariCP для Maven](#подключение-hikaricp-для-maven)
     - [Конфигурация HikariCP](#конфигурация-hikaricp)
         - [XML-конфигурация HikariCP](#xml-конфигурация-hikaricp)
+        - [Конфигурация через файл .properties](#конфигурация-через-файл-properties)
         - [Программная конфигурация HikariCP](#программная-конфигурация-hikaricp)
     - [Пример использования HikariCP](#пример-использования-hikaricp)
 - [HSQLDB (HyperSQL Database)](#hsqldb-hypersql-database) - **Легковесная, быстрая, полностью работающая в памяти СУБД**
@@ -230,7 +231,55 @@
         <property name="maximumPoolSize" value="10"/>
     </bean>
 </beans>
+```
 
+#### Конфигурация через файл .properties
+
+```java
+    import com.zaxxer.hikari.HikariConfig;
+    HikariConfig config = new HikariConfig("/database.properties"); // Загрузка параметров через database.properties
+    //  * Был доступен в версии (4.0.1)
+```
+
+**Пример содержания database.properties**
+```properties
+# JDBC URL для подключения к базе данных
+dataSource.url=jdbc:mysql://localhost:3306/mydatabase
+
+# Имя пользователя для подключения к базе данных
+dataSource.user=root
+
+# Пароль для подключения к базе данных
+dataSource.password=password
+
+# Класс драйвера JDBC
+dataSource.driverClassName=com.mysql.cj.jdbc.Driver
+
+# Минимальное количество подключений в пуле
+minimumIdle=5
+
+# Максимальное количество подключений в пуле
+maximumPoolSize=10
+
+# Максимальное время ожидания получения соединения из пула (в миллисекундах)
+connectionTimeout=30000
+
+# Интервал времени между проверками соединений на "живучесть" (в миллисекундах)
+idleTimeout=600000
+
+# Максимальное время жизни соединения (в миллисекундах)
+maxLifetime=1800000
+
+# Имя пула соединений
+poolName=MyHikariCP
+```
+**Пример database.properties**
+```properties
+dataSourceClassName=org.postgresql.ds.PGSimpleDataSource
+dataSource.user=dm
+dataSource.databaseName=postgres
+dataSource.serverName=localhost
+dataSource.portNumber=5432
 ```
 
 #### Программная конфигурация HikariCP:

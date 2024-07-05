@@ -146,6 +146,7 @@
     Field[] fields = clazz.getDeclaredFields(); // Возвращает массив объектов Field, представляющих все объявленные поля класса, включая приватные
 
     boolean accessible = field.isAccessible(); // Проверяет, доступно ли поле (игнорирует ли оно проверку доступа)
+    boolean isHasAnnotation = field.isAnnotationPresent(Annotation.class); // Провеяет присутствует ли данная аннотация на данном поле
     Class<?> fieldType = field.getType(); // Возвращает объект Class, представляющий тип поля
     int modifiers = field.getModifiers(); // Возвращает модификаторы доступа поля
     String fieldName = field.getName(); // Возвращает имя поля

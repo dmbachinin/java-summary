@@ -1383,7 +1383,7 @@ Java предоставляет несколько мета-аннотаций, 
     // Указываем, что аннотация может применяться к методам
     @Target(ElementType.METHOD)
     public @interface MyAnnotation {
-        String value();
+        String value(); // Если не указывать значение по умолчанию, то необходимо обязательно указать значение
         int number() default 0; // Элемент с значением по умолчанию
     }
     // Пример использования аннотации
@@ -1545,21 +1545,24 @@ Java предоставляет несколько мета-аннотаций, 
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
-                <configuration>
-                    <source>8</source> <!-- Указываем версию исходного кода Java -->
-                    <target>8</target> <!-- Указываем версию целевого кода Java -->
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>com.google.auto.service</groupId>
-                            <artifactId>auto-service</artifactId>
-                            <version>1.0-rc7</version> <!-- Версия зависимости auto-service -->
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <annotationProcessors>
+                                <annotationProcessor>
+                                    edu.school.htmlProcessor.HtmlProcessor <!-- Путь к прцессору -->
+                                </annotationProcessor>
+                            </annotationProcessors>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
-    </build>
-
+    </build>    
 ```
 
 Библиотека `auto-service` от Google используется для автоматической регистрации процессоров аннотаций. Она позволяет упростить процесс создания файлов META-INF/services, которые необходимы для регистрации процессоров аннотаций.
