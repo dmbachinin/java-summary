@@ -1,31 +1,30 @@
-```
+# Работа с базами данных через java
+
+```plantext
     В данном файле собрана информация по работе с базами данных через java
 ```
 
-# Cодержание
-
-- [java.sql](#javasql)
+- [Работа с базами данных через java](#работа-с-базами-данных-через-java)
+  - [java.sql](#javasql)
     - [Основные интерфейсы и методы java.sql](#основные-интерфейсы-и-методы-javasql)
     - [Типы Date, Time, Timestamp в java.sql](#типы-date-time-timestamp-в-javasql)
-- [JDBC(PostgreSQL)](#jdbcpostgresql) - **Для работы с PostgreSQL через JDBC**
+  - [JDBC(PostgreSQL)](#jdbcpostgresql)
     - [Подключение JDBC(PostgreSQL) для Maven](#подключение-jdbcpostgresql-для-maven)
-- [HikariCP](#hikaricp) — **Это высокопроизводительный JDBC пул соединений для Java**
+  - [HikariCP](#hikaricp)
     - [Основные преимущества HikariCP](#основные-преимущества-hikaricp)
     - [Основные функции HikariCP](#основные-функции-hikaricp)
     - [Подключение HikariCP для Maven](#подключение-hikaricp-для-maven)
     - [Конфигурация HikariCP](#конфигурация-hikaricp)
-        - [XML-конфигурация HikariCP](#xml-конфигурация-hikaricp)
-        - [Конфигурация через файл .properties](#конфигурация-через-файл-properties)
-        - [Программная конфигурация HikariCP](#программная-конфигурация-hikaricp)
+      - [XML-конфигурация HikariCP](#xml-конфигурация-hikaricp)
+      - [Конфигурация через файл .properties](#конфигурация-через-файл-properties)
+      - [Программная конфигурация HikariCP](#программная-конфигурация-hikaricp)
     - [Пример использования HikariCP](#пример-использования-hikaricp)
-- [HSQLDB (HyperSQL Database)](#hsqldb-hypersql-database) - **Легковесная, быстрая, полностью работающая в памяти СУБД**
+  - [HSQLDB (HyperSQL Database)](#hsqldb-hypersql-database)
     - [Преимущества HSQLDB](#преимущества-hsqldb)
     - [Для чего нужна HSQLDB](#для-чего-нужна-hsqldb)
     - [Подключение HSQLDB для Maven](#подключение-hsqldb-для-maven)
     - [Пример подключения к базе данных HSQLDB в режиме сервера](#пример-подключения-к-базе-данных-hsqldb-в-режиме-сервера)
-
-
-
+    - [Получение DataSource из HSQLDB](#получение-datasource-из-hsqldb)
 
 ## java.sql
 
@@ -48,6 +47,7 @@
 
     // DriverManager - Этот интерфейс управляет набором драйверов баз данных
     Connection driverManagerConnection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/mydatabase", "myusername", "mypassword"); // Устанавливает соединение с базой данных
+    Connection connection = dataSource.getConnection(); // Получение Connection из DataSource
 
     // Connection - Этот интерфейс представляет соединение с конкретной базой данных
     Connection connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/mydatabase", "myusername", "mypassword");
@@ -92,6 +92,7 @@
         String column1 = resultSet.getString(1); // Возвращает значение указанного столбца как String
         int column2 = resultSet.getInt(2); // Возвращает значение указанного столбца как int
         Date column3 = resultSet.getDate(3); // // Возвращает значение указанного столбца как Date
+        Long column3 = resultSet.getLong("ColumnName"); // // Возвращает значение указанного столбца как Long используя имя столбца
     }
      boolean isNull = resultSet.wasNull(); // Проверяет, было ли значение последней прочитанной колонки SQL NULL
     resultSet.close(); // Закрывает объект ResultSet
@@ -177,6 +178,7 @@
 Для работы с PostgreSQL через JDBC вам потребуется драйвер PostgreSQL JDBC. Этот драйвер позволяет Java-приложению взаимодействовать с базой данных PostgreSQL.
 
 ### Подключение JDBC(PostgreSQL) для Maven
+
 ```xml
     <dependency>
         <groupId>org.postgresql</groupId>
@@ -189,19 +191,22 @@
 
 `HikariCP` — это высокопроизводительный JDBC пул соединений для Java. Он создан для обеспечения надежности, устойчивости и высокой производительности. HikariCP стал одним из самых популярных решений для управления соединениями с базами данных благодаря своей скорости и простоте настройки.
 
-### Основные преимущества HikariCP:
+### Основные преимущества HikariCP
+
 1. `Высокая производительность`: HikariCP известен своей минимальной латентностью и высокой пропускной способностью.
 2. `Низкое потребление ресурсов`: Он эффективно управляет соединениями, что снижает нагрузку на ресурсы.
 3. `Надежность`: HikariCP устойчив к различным сбоям и проблемам с базой данных.
 4. `Простота настройки`: Легкость в конфигурации и интеграции с популярными ORM-библиотеками, такими как Hibernate.
 
-### Основные функции HikariCP:
+### Основные функции HikariCP
+
 - Быстрая проверка и валидация соединений.
 - Поддержка различных механизмов изоляции транзакций.
 - Конфигурируемое время жизни и тайм-аут соединений.
 - Управление размером пула соединений и авто-расширение.
 
 ### Подключение HikariCP для Maven
+
 ```xml
     <dependency>
         <groupId>com.zaxxer</groupId>
@@ -241,7 +246,8 @@
     //  * Был доступен в версии (4.0.1)
 ```
 
-**Пример содержания database.properties**
+Пример содержания database.properties
+
 ```properties
 # JDBC URL для подключения к базе данных
 dataSource.url=jdbc:mysql://localhost:3306/mydatabase
@@ -273,7 +279,9 @@ maxLifetime=1800000
 # Имя пула соединений
 poolName=MyHikariCP
 ```
-**Пример database.properties**
+
+Пример database.properties
+
 ```properties
 dataSourceClassName=org.postgresql.ds.PGSimpleDataSource
 dataSource.user=dm
@@ -282,7 +290,7 @@ dataSource.serverName=localhost
 dataSource.portNumber=5432
 ```
 
-#### Программная конфигурация HikariCP:
+#### Программная конфигурация HikariCP
 
 ```java
 import com.zaxxer.hikari.HikariConfig;
@@ -347,7 +355,7 @@ public class HikariCPExample {
 
 `HSQLDB (HyperSQL Database)` — это реляционная система управления базами данных, написанная на Java. Это легковесная, быстрая, полностью работающая в памяти СУБД, которая также поддерживает режимы дискового хранения и сервера. HSQLDB часто **используется в тестировочных средах и для разработки из-за своей скорости и простоты в использовании**. Она может быть встроена в Java-приложения или использоваться как отдельный сервер.
 
-### Преимущества HSQLDB:
+### Преимущества HSQLDB
 
 1. **Быстрая и легковесная**: Очень мало весит и предоставляет высокую производительность для операций с базой данных.
 2. **Полностью написана на Java**: Интеграция с Java-приложениями происходит очень естественно и просто.
@@ -358,6 +366,7 @@ public class HikariCPExample {
 ### Для чего нужна HSQLDB
 
 HSQLDB часто используется для:
+
 - Разработки и тестирования Java-приложений, где не требуется сложная настройка и поддержка больших объемов данных.
 - Обучения и экспериментов с SQL и базами данных.
 - Применения в малых проектах или как локальная база данных для отдельных клиентских приложений.
@@ -368,13 +377,15 @@ HSQLDB часто используется для:
     <dependency>
         <groupId>org.hsqldb</groupId>
         <artifactId>hsqldb</artifactId>
-        <version>2.6.0</version>
+        <version>2.7.2</version>
+        <scope>test</scope>
     </dependency>
 ```
 
 ### Пример подключения к базе данных HSQLDB в режиме сервера
 
 В этом примере мы подключаемся к серверу HSQLDB, работающему на локальном компьютере (`localhost`) и слушающему порт 9001.
+
 ```java
    import java.sql.Connection;
    import java.sql.DriverManager;
@@ -403,4 +414,18 @@ HSQLDB часто используется для:
            }
        }
    }
+```
+
+### Получение DataSource из HSQLDB
+
+```java
+    import org.hsqldb.jdbc.JDBCDataSource;
+
+    public static DataSource getDataSource() {
+        JDBCDataSource dataSource = new JDBCDataSource();
+        dataSource.setURL("jdbc:hsqldb:mem:testdb"); // Временная база данных в памяти
+        dataSource.setUser("SA"); // Логин по умолчанию
+        dataSource.setPassword(""); // Пароль по умолчанию пустой
+        return dataSource;
+    }
 ```
