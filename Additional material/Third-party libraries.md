@@ -1,18 +1,26 @@
+# Сторонние библиотеки
+
 ```
     В данном файле приведены сторонние библиотеки java, которые могут пригодиться в работе
 ```
 
-# Cодержание
-
-- [JCommander](#jcommander) - **Обработка параметров командой строки**
-- [JCDP](#jcdp) - **Цветная печать в терминале**
-- [json(org.json)](#json-orgjson) - **Работа с json**
+- [Сторонние библиотеки](#сторонние-библиотеки)
+  - [JCommander](#jcommander)
+  - [JCDP](#jcdp)
+  - [json (org.json)](#json-orgjson)
+    - [Основные классы](#основные-классы)
+    - [Основные методы](#основные-методы)
+    - [Примеры использования](#примеры-использования)
+      - [Чтение JSON из файла](#чтение-json-из-файла)
+      - [Создание и модификация JSON-объектов](#создание-и-модификация-json-объектов)
+      - [Чтение и модификация JSON-массивов](#чтение-и-модификация-json-массивов)
 
 ## JCommander
 
 `JCommander` - это библиотека для обработки аргументов командной строки в Java. Она предоставляет удобные средства для определения и разбора параметров командной строки, позволяя легко создавать приложения с гибкими и понятными интерфейсами командной строки.
 
 **Подключение для Maven:**
+
 ```xml
     <dependency>
         <groupId>com.beust</groupId>
@@ -55,18 +63,21 @@ public class MyApp {
 }
 ```
 
-**Ссылки для скачивания**: 
-* https://repo1.maven.org/maven2/com/beust/jcommander/1.72/jcommander-1.72.jar
-* http://www.java2s.com/Code/Jar/j/Downloadjcommanderjar.htm
+**Ссылки для скачивания**:
+
+- <https://repo1.maven.org/maven2/com/beust/jcommander/1.72/jcommander-1.72.jar>
+- <http://www.java2s.com/Code/Jar/j/Downloadjcommanderjar.htm>
 
 **Документация**:
-* https://jcommander.org/
+
+- <https://jcommander.org/>
 
 ## JCDP
 
 `JCDP` (Java Colored Debug Printer) — это библиотека для Java, которая позволяет разработчикам выводить на консоль цветной текст. Эта библиотека упрощает форматирование сообщений для отладки и логгирования, делая вывод более читабельным и структурированным.
 
 **Подключение для Maven:**
+
 ```xml
     <dependency>
         <groupId>com.diogonunes</groupId>
@@ -76,6 +87,7 @@ public class MyApp {
 ```
 
 **Пример использования JCDP:**
+
 ```java
 import com.diogonunes.jcdp.color.api.Ansi;
 import com.diogonunes.jcdp.color.ColoredPrinter;
@@ -104,18 +116,21 @@ public class JCDPExample {
 }
 ```
 
-**Ссылки для скачивания**: 
-* https://repo1.maven.org/maven2/com/diogonunes/JCDP/4.0.0/JCDP-4.0.0.jar
-* https://mavenlibs.com/jar/file/com.diogonunes/JCDP
+**Ссылки для скачивания**:
+
+- <https://repo1.maven.org/maven2/com/diogonunes/JCDP/4.0.0/JCDP-4.0.0.jar>
+- <https://mavenlibs.com/jar/file/com.diogonunes/JCDP>
 
 **Документация**:
-* https://dialex.github.io/JColor/index-all.html
+
+- <https://dialex.github.io/JColor/index-all.html>
 
 ## json (org.json)
 
 Библиотека `org.json` (также известная как JSON-java) является простой и лёгкой библиотекой для работы с JSON в Java. Она предоставляет классы для работы с JSON-объектами и массивами, позволяя легко парсить, создавать и модифицировать JSON-данные.
 
 ### Основные классы
+
 ```java
 JSONObject; // Представляет JSON-объект, который содержит пары "ключ-значение".
 JSONArray; // Представляет JSON-массив, который содержит упорядоченные значения.
@@ -123,6 +138,7 @@ JSONTokener; // Разбирает JSON-данные из строки или п
 ```
 
 ### Основные методы
+
 ```java
 JSONObject.put(String key, Object value); // Добавляет или обновляет пару "ключ-значение".
 JSONObject.getString(String key); // Возвращает значение по ключу в виде строки.
@@ -132,6 +148,7 @@ JSONArray.getJSONObject(int index); // Возвращает объект JSON п
 ```
 
 **Подключение для Maven:**
+
 ```xml
     <dependency>
         <groupId>com.diogonunes</groupId>
