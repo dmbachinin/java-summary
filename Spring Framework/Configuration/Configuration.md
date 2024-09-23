@@ -55,6 +55,10 @@
       - [Пример использования PropertySource](#пример-использования-propertysource)
     - [@Enable... аннотации](#enable-аннотации)
       - [Пример использования  Enable... аннотаций](#пример-использования--enable-аннотаций)
+    - [Использование бинов из классов @Component в @Configuration](#использование-бинов-из-классов-component-в-configuration)
+      - [Использование аннотации @Autowired (Не рекомендуется)](#использование-аннотации-autowired-не-рекомендуется)
+      - [Использование метода @Bean в @Configuration](#использование-метода-bean-в-configuration)
+      - [Использование ApplicationContext](#использование-applicationcontext)
     - [Использование Java-конфигурации](#использование-java-конфигурации)
 
 ## Spring Bean
@@ -834,6 +838,109 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling // Включает возможность использования планировщика задач в Spring
 public class SchedulingConfig {
     // Конфигурация планировщика задач
+}
+```
+
+### Использование бинов из классов @Component в @Configuration
+
+Чтобы получить бины, которые помечены аннотацией `@Component`, внутри класса, отмеченного как `@Configuration`, вам нужно использовать механизм внедрения зависимостей Spring. Вот несколько подходов, как это можно сделать:
+
+#### Использование аннотации @Autowired (Не рекомендуется)
+
+Если у вас есть компонент, который помечен аннотацией `@Component`, вы можете использовать аннотацию `@Autowired` для получения этого бина внутри класса, отмеченного как `@Configuration`
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
+
+@Configuration
+public class AppConfig {
+
+    // Внедрение бина через @Autowired
+    @Autowired
+    private MyComponent myComponent;
+
+    @Bean
+    public String someBean() {
+        // Используем myComponent внутри метода
+        return "Value from myComponent: " + myComponent.getValue();
+    }
+}
+
+@Component
+class MyComponent {
+    public String getValue() {
+        return "Hello from MyComponent";
+    }
+}
+```
+
+#### Использование метода @Bean в @Configuration
+
+Если вы хотите получить бин напрямую внутри метода, можно передать его как параметр в метод, возвращающий бин, используя автоматическое разрешение параметров в Spring.
+
+В этом примере Spring автоматически передаст бин `MyComponent` в метод `someBean()` при его создании.
+
+```java
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
+
+@Configuration
+public class AppConfig {
+
+    // Внедрение бина через параметры метода
+    @Bean
+    public String someBean(MyComponent myComponent) { // Передача бина в параметрах
+        return "Value from myComponent: " + myComponent.getValue();
+    }
+}
+
+@Component
+class MyComponent {
+    public String getValue() {
+        return "Hello from MyComponent";
+    }
+}
+```
+
+#### Использование ApplicationContext
+
+Если по каким-то причинам вам нужно вручную получить бин в `@Configuration`-классе, вы можете воспользоваться `ApplicationContext`.
+
+В этом случае вы передаете `ApplicationContext` через конструктор и используете его для извлечения бина вручную.
+
+```java
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.stereotype.Component;
+
+@Configuration
+public class AppConfig {
+
+    private final ApplicationContext applicationContext;
+
+    public AppConfig(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+    }
+
+    @Bean
+    public String someBean() {
+        // Получаем бин вручную
+        MyComponent myComponent = applicationContext.getBean(MyComponent.class);
+        return "Value from myComponent: " + myComponent.getValue();
+    }
+}
+
+@Component
+class MyComponent {
+    public String getValue() {
+        return "Hello from MyComponent";
+    }
 }
 ```
 
