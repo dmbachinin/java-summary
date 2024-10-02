@@ -5,7 +5,8 @@
 - [Spring MVC](#spring-mvc)
   - [Что такое MVC?](#что-такое-mvc)
   - [Как Spring MVC реализует MVC](#как-spring-mvc-реализует-mvc)
-  - [Конфигурация Spring MVC](#конфигурация-spring-mvc)
+  - [Создание проекта Spring MVC](#создание-проекта-spring-mvc)
+    - [Подключение зависимостей Spring MVC для Maven](#подключение-зависимостей-spring-mvc-для-maven)
   - [Конфигурация web.xml](#конфигурация-webxml)
     - [Основные элементы конфигурации web.xml](#основные-элементы-конфигурации-webxml)
     - [Конфигурация servlet через applicationContext.xml](#конфигурация-servlet-через-applicationcontextxml)
@@ -33,11 +34,20 @@
       - [@SessionAttribute](#sessionattribute)
       - [@RequestPart](#requestpart)
     - [Контекст запроса — HttpServletRequest и HttpServletResponse](#контекст-запроса--httpservletrequest-и-httpservletresponse)
+      - [Подключение HttpServletRequest и HttpServletResponse через Maven](#подключение-httpservletrequest-и-httpservletresponse-через-maven)
       - [HttpServletRequest](#httpservletrequest)
       - [HttpServletResponse](#httpservletresponse)
     - [Principal](#principal)
     - [Загрузки файлов — MultipartFile](#загрузки-файлов--multipartfile)
     - [Модель и представление — Model, ModelMap, Map](#модель-и-представление--model-modelmap-map)
+      - [Model](#model)
+      - [ModelMap](#modelmap)
+      - [Map](#map)
+      - [Использование данных из моделей](#использование-данных-из-моделей)
+  - [Формы Spring MVC](#формы-spring-mvc)
+    - [HTML Формы](#html-формы)
+    - [Формы с использованием Spring Form Tags](#формы-с-использованием-spring-form-tags)
+    - [Использование объектов-форм (Form Objects) с валидацией](#использование-объектов-форм-form-objects-с-валидацией)
 
 ## Что такое MVC?
 
@@ -68,12 +78,25 @@
 
 4. **View** — это то, как данные отображаются пользователю. В Spring MVC представления обычно создаются с помощью шаблонов (например, JSP, Thymeleaf, или других движков шаблонов).
 
-## Конфигурация Spring MVC
+## Создание проекта Spring MVC
 
 1. Создаем maven проект, используя `maven-archetype-webapp`
-2. Покдлючаем необходимые библиотеки:
+2. [Покдлючаем необходимые библиотеки](#подключение-зависимостей-spring-mvc-для-maven)
+3. Запуск проекта через Tomcat
 
-    ```xml
+    1. Скачайте Tomcat с официального сайта Apache Tomcat.
+    2. Распакуйте архив в удобное место на вашем компьютере.
+    3. Чтобы запустить Tomcat, перейдите в каталог bin и запустите файл:
+        Для Windows: startup.bat
+        Для Unix/Linux: ./startup.sh
+    4. Разместите ваш WAR-файл в директории webapps, и Tomcat автоматически развернет его.
+4. Дабавляем пакеты в иерархию
+    По умолчанию `maven-archetype-webapp` не создает папку java со вложенными пакетами, поэтому ее стоит создать
+5. [Конфигурируем web.xml](#конфигурация-webxml)
+
+### Подключение зависимостей Spring MVC для Maven
+
+ ```xml
         <properties>
             <spring.version>6.1.6</spring.version>
         </properties>
@@ -101,27 +124,21 @@
             <artifactId>spring-webmvc</artifactId>
             <version>${spring.version}</version>
         </dependency>
-
+        <!-- Для Spring ниже 5 -->
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>jstl</artifactId>
             <version>1.2</version>
         </dependency>
-    ```
 
-3. Запуск проекта через Tomcat
+        <!-- Для Spring выше 5 -->
+        <dependency>
+            <groupId>org.glassfish.web</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+            <version>3.0.1</version>
+        </dependency>
 
-    1. Скачайте Tomcat с официального сайта Apache Tomcat.
-    2. Распакуйте архив в удобное место на вашем компьютере.
-    3. Чтобы запустить Tomcat, перейдите в каталог bin и запустите файл:
-        Для Windows: startup.bat
-        Для Unix/Linux: ./startup.sh
-    4. Разместите ваш WAR-файл в директории webapps, и Tomcat автоматически развернет его.
-
-4. Дабавляем пакеты в иерархию
-
-    По умолчанию `maven-archetype-webapp` не создает папку java со вложенными пакетами, поэтому ее стоит создать
-5. Конфигурируем web.xml
+```
 
 ## Конфигурация web.xml
 
@@ -355,12 +372,14 @@ public class HomeController {
 
 `@RequestMapping`: Используется для задания маршрутов и указания HTTP-методов для обработки запросов
 
+!Все пути должны быть уникальными, иначе возникнет ошибка при которой программа не будет понимать какой View отображать.
+
 ```java
     @Controller
-    @RequestMapping("/products")
+    @RequestMapping("/products") // Применение аннотации к самому классу, чтобы связать с этим адресов все адреса методов (Controller Mapping)
     public class ProductController {
 
-        @RequestMapping(value = "/list", method = RequestMethod.GET)
+        @RequestMapping(value = "/list", method = RequestMethod.GET) // Для обращения к данному методу необходимо перейти по адресу: /products/list
         public String listProducts(Model model) {
             List<Product> products = productService.findAll();
             model.addAttribute("products", products);
@@ -402,11 +421,11 @@ public class HomeController {
 
 #### Параметры запроса (Query Parameters) — @RequestParam
 
-@RequestParam: Используется для извлечения параметров запроса (например, query-параметры или параметры формы).
+`@RequestParam:` Используется для извлечения параметров запроса (например, query-параметры или параметры формы).
 
 ```java
     @GetMapping("/greet")
-    public String greetUser(@RequestParam("name") String name, Model model) { // Извлекает параметр name из строки запроса
+    public String greetUser(@RequestParam("name") String name, Model model) { // Извлекает параметр name из строки запроса (из query параметров)
         model.addAttribute("name", name);
         return "greeting";
     }
@@ -414,7 +433,7 @@ public class HomeController {
 
 #### Переменные пути (Path Variables) — @PathVariable
 
-@PathVariable: Используется для извлечения переменных из URL
+`@PathVariable`: Используется для извлечения переменных из URL
 
 ```java
     @GetMapping("/product/{id}")
@@ -427,7 +446,7 @@ public class HomeController {
 
 #### @ModelAttribute
 
-@ModelAttribute: Используется для связывания данных формы с объектами Java или для передачи объекта в представление
+`@ModelAttribute`: Используется для связывания данных формы с объектами Java или для передачи объекта в представление
 
 ```java
     @PostMapping("/register")
@@ -445,7 +464,7 @@ public class HomeController {
 
 #### Тело запроса (Request Body) — @RequestBody
 
-@RequestBody используется для извлечения тела запроса (обычно JSON или XML), который отправляется в POST, PUT, DELETE и других запросах. Spring автоматически преобразует тело запроса в объект Java
+`@RequestBody` используется для извлечения тела запроса (обычно JSON или XML), который отправляется в POST, PUT, DELETE и других запросах. Spring автоматически преобразует тело запроса в объект Java
 
 ```java
     @PostMapping("/users")
@@ -457,7 +476,7 @@ public class HomeController {
 
 #### Заголовки HTTP (HTTP Headers) — @RequestHeader
 
-@RequestHeader позволяет получить значения заголовков HTTP из запроса
+`@RequestHeader` позволяет получить значения заголовков HTTP из запроса
 
 ```java
     @GetMapping("/headers")
@@ -475,7 +494,7 @@ public class HomeController {
 
 #### Cookie — @CookieValue
 
-@CookieValue используется для извлечения значений cookies
+`@CookieValue` используется для извлечения значений cookies
 
 ```java
     @GetMapping("/cookie")
@@ -499,7 +518,7 @@ public class HomeController {
 
 #### @SessionAttribute
 
-@SessionAttribute используется для извлечения атрибутов, сохраненных в сессии.
+`@SessionAttribute` используется для извлечения атрибутов, сохраненных в сессии.
 
 ```java
     @GetMapping("/profile")
@@ -524,6 +543,31 @@ public class HomeController {
 ```
 
 ### Контекст запроса — HttpServletRequest и HttpServletResponse
+
+#### Подключение HttpServletRequest и HttpServletResponse через Maven
+
+В Spring 5 и выше Spring MVC был обновлён для работы с jakarta.servlet вместо javax.servlet
+
+```xml
+    <!-- Для Spring ниже 5 -->
+    <!-- https://mvnrepository.com/artifact/javax.servlet/servlet-api -->
+    <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>servlet-api</artifactId>
+        <version>2.5</version>
+        <scope>provided</scope>
+    </dependency>
+
+    <!-- Для Spring выше 5 -->
+    <!-- https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api -->
+    <dependency>
+        <groupId>jakarta.servlet</groupId>
+        <artifactId>jakarta.servlet-api</artifactId>
+        <version>6.0.0</version>
+        <scope>provided</scope>
+    </dependency>
+
+```
 
 #### HttpServletRequest
 
@@ -686,6 +730,271 @@ public class HomeController {
 
 ### Principal
 
+`Principal` — это интерфейс в Java, который представляет собой сущность, имеющую права доступа к ресурсам. В контексте веб-приложений Principal используется для хранения информации о текущем пользователе, аутентифицированном в приложении. Этот интерфейс является частью Java Security API и помогает управлять безопасностью, а также доступом к защищённым ресурсам.
+
+**Основные задачи класса Principal:**
+
+1. `Представление аутентифицированного пользователя`: Интерфейс Principal представляет текущего пользователя, который выполнил вход в систему.
+2. `Получение информации о пользователе`: Он предоставляет методы для получения информации, такой как имя пользователя, которое можно использовать в логике приложения (например, для авторизации или регистрации действий пользователя).
+3. `Использование в аутентификации`: Веб-приложения часто используют Principal для проверки прав доступа к ресурсам (например, защищённым страницам или API).
+
+**Методы:**
+
+```java
+    Principal principal = request.getUserPrincipal();
+    String username = principal.getName();
+```
+
 ### Загрузки файлов — MultipartFile
 
+`MultipartFile` — это интерфейс в Spring, который представляет файл, загруженный через форму HTML. Этот интерфейс предоставляет методы для получения данных файла и его метаданных, таких как имя файла, размер, тип содержимого и т. д. Он широко используется в веб-приложениях для обработки загрузки файлов (например, изображений, документов и т. д.).
+
+**Основные задачи MultipartFile:**
+
+1. `Представление загружаемого файла`: MultipartFile представляет файл, который пользователь загружает через форму на веб-странице.
+2. `Обработка загрузок`: Он предоставляет методы для работы с содержимым файла, позволяя разработчикам обрабатывать загруженные файлы в контроллерах.
+3. `Получение метаданных файла`: С помощью MultipartFile можно получить информацию о загруженном файле, такую как его имя, тип и размер.
+
+**Методы:**
+
+```java
+    MultipartFile file;
+    String paramName = file.getName(); // Возвращает имя параметра, по которому файл был загружен
+    String originalFilename = file.getOriginalFilename(); // Возвращает оригинальное имя файла, как оно было на клиенте
+    String contentType = file.getContentType(); // Возвращает MIME-тип содержимого файла (например, image/jpeg или application/pdf)
+    boolean empty = file.isEmpty(); // Проверяет, является ли файл пустым (т.е. размер файла равен 0)
+    long size = file.getSize(); // Возвращает размер файла в байтах
+    byte[] bytes = file.getBytes(); // Возвращает содержимое файла в виде массива байтов
+    InputStream inputStream = file.getInputStream(); // Возвращает поток ввода для чтения содержимого файла
+    file.transferTo(new File("/path/to/destination/file.txt")); // Перемещает загруженный файл в указанное место на диске
+    void transferTo(Resource dest); // Аналогично предыдущему методу, но принимает объект Resource, что позволяет сохранять файл в различных форматах ресурсов
+    
+```
+
 ### Модель и представление — Model, ModelMap, Map
+
+`Модель` - это контейнер для хранения данных. Находясь в `Controller`, мы можем добавлять в него данные, чтобы потом использовать их во `View`.
+
+#### Model
+
+`Model` — это интерфейс, который представляет собой контейнер для хранения данных, которые будут переданы в представление. Он используется в методах контроллера для добавления атрибутов, которые затем могут быть доступны в представлениях (например, JSP, Thymeleaf).
+
+**Методы:**
+
+```java
+    model.addAttribute("user", user); // Добавляет атрибут с указанным именем и значением в модель
+    model.addAttribute("description", "cool"); // Добавляет атрибут с указанным именем и значением в модель
+    model.addAttribute(user); // Добавляет атрибут, используя имя, соответствующее имени класса с первой строчной буквы
+    Map<String, Object> attributes = model.asMap(); // Возвращает модель как Map, что позволяет работать с ней как с обычной картой, если это необходимо
+```
+
+**Пример:**
+
+```java
+    @Controller
+    public class UserController {
+
+        @GetMapping("/user")
+        public String getUser(ModelMap modelMap) {
+            User user = userService.findUserById(1L);
+            modelMap.addAttribute("user", user); // Добавляем объект User в ModelMap
+            return "userProfile"; // Возвращаем имя представления
+        }
+    }
+```
+
+#### ModelMap
+
+`ModelMap` — это класс, который реализует интерфейс Model и является более расширенным вариантом. Он работает как карта (Map), что позволяет добавлять атрибуты с помощью методов, характерных для карт
+
+```java
+    @Controller
+    public class UserController {
+
+        @GetMapping("/user")
+        public String getUser(ModelMap modelMap) {
+            User user = userService.findUserById(1L);
+            modelMap.addAttribute("user", user); // Добавляем объект User в ModelMap
+            return "userProfile"; // Возвращаем имя представления
+        }
+    }
+```
+
+#### Map
+
+`Map` в Spring MVC может использоваться как тип параметра для передачи данных из контроллера в представление. Он предоставляет возможность использовать стандартные операции для работы с ключами и значениями
+
+```java
+    @Controller
+    public class UserController {
+
+        @GetMapping("/user")
+        public String getUser(Map<String, Object> model) {
+            User user = userService.findUserById(1L);
+            model.put("user", user); // Добавляем объект User в Map
+            return "userProfile"; // Возвращаем имя представления
+        }
+    }
+```
+
+#### Использование данных из моделей
+
+**Пример с JSP:**
+
+```jsp
+    <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+    <html>
+    <head>
+        <title>User Profile</title>
+    </head>
+    <body>
+        <h1>User Profile</h1>
+        <p>First Name: ${user.firstName}</p> <!-- Чтобы получить данные из объекта класса (например, user) с помощью синтаксиса ${user.firstName} в JSP или Thymeleaf, вам нужно убедиться, что ваш класс User имеет соответствующие геттеры для доступа к его полям -->
+        <p>Last Name: ${user.lastName}</p>
+        <p>Age: ${user.age}</p>
+        <p>Description: ${description}</p> <!-- Для простых параметров обращение просиходит по имени -->
+    </body>
+    </html>
+```
+
+## Формы Spring MVC
+
+### HTML Формы
+
+HTML-формы являются основным способом сбора данных от пользователей. В Spring MVC вы можете использовать стандартные HTML-формы с различными полями, такими как текстовые поля, выпадающие списки, радиокнопки и т. д.
+
+```jsp
+    <form action="/submit" method="post">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        
+        <label for="age">Age:</label>
+        <input type="number" id="age" name="age" required>
+        
+        <input type="submit" value="Submit">
+    </form>
+```
+
+### Формы с использованием Spring Form Tags
+
+Spring MVC предоставляет специальный набор тегов, называемых Spring Form Tags, которые упрощают создание и обработку форм. Эти теги позволяют автоматически связывать поля формы с свойствами модели и обрабатывать валидацию
+
+**Пример контроллера:**
+
+```java
+    @Controller
+    public class UserController {
+
+        @GetMapping("/showForm")
+        public String showForm(Model model) {
+            model.addAttribute("user", new User()); // Помещаем объект пользователя, чтобы связать данные 
+            return "userForm"; // Возвращаем имя представления
+        }
+
+        @PostMapping("/submit")
+        public String submitForm(@ModelAttribute("user") UserForm userForm) { // Перехват тега с пользователем
+            // Обработка данных из формы
+            return "result"; // Возвращаем имя представления с результатом
+        }
+    }
+```
+
+```jsp
+    <%@ taglib uri="http://www.springframework.org/tags/form" prefix="form" %> <!-- Подключение библиотеки для работы с формами -->
+    <form:form action="/submit" method="post" modelAttribute="user">
+        <form:label path="name">Name:</form:label>
+        <form:text path="name" required="true" />
+
+        <form:label path="age">Age:</form:label>
+        <form:input path="age" required="true" />
+
+        <input type="submit" value="Submit" />
+    </form:form>
+```
+
+### Использование объектов-форм (Form Objects) с валидацией
+
+Иногда имеет смысл использовать отдельные классы для представления данных формы, особенно если форма сложная или содержит много полей. Такие классы называются Form Objects
+
+**Объект формы с валидацией:**
+
+```java
+    public class UserForm {
+        @NotNull(message = "This field cannot be null") // Проверяет, что поле не является null
+        private String name;
+
+        @Min(value = 18, message = "Age must be at least 18") // Проверяет, что числовое значение не меньше указанного минимума
+        private int age;
+        
+        @Max(value = 250, message = "height is big") // Проверяет, что числовое значение не больше указанного максимума
+        private int height
+
+        @DecimalMin(value = "1000.00", message = "Salary must be at least 1000.00") // Проверяет, что десятичное число не меньше указанного значения (например, для полей типа BigDecimal или double)
+        private BigDecimal salary;
+
+        @DecimalMax(value = "10000.00", message = "Salary must be less than 10000.00") // Проверяет, что десятичное число не больше указанного значения
+        private BigDecimal salary;
+
+        @Digits(integer = 5, fraction = 2, message = "Number must have up to 5 digits and 2 decimal places") // Проверяет, что числовое значение имеет не больше указанного количества целых и дробных цифр
+        private BigDecimal number;
+
+        @Email(message = "Email should be valid") // Проверяет, что строка является корректным адресом электронной почты
+        private String email;
+
+        @NotEmpty(message = "Name cannot be empty") // Проверяет, что поле не является null и не является пустым (для строк и коллекций)
+        private String field1;
+        
+        @Pattern(regexp = "^[A-Za-z0-9]+$", message = "Username must contain only alphanumeric characters") // Проверяет, что строка соответствует регулярному выражению
+        private String username;
+
+        @AssertTrue(message = "You must accept the terms") // Проверяет, что булевое значение равно true
+        private boolean acceptTerms;  
+
+        @AssertFalse(message = "The value must be false") // Проверяет, что булевое значение равно false
+        private boolean isDeleted;
+
+        @Past(message = "The date must be in the past") // Проверяет, что дата или время находятся в прошлом
+        private LocalDate birthDate;
+
+        @PastOrPresent(message = "The date must be in the past or present") // Проверяет, что дата или время находятся в прошлом или настоящем
+        private LocalDate creationDate;
+
+        @Future(message = "The date must be in the future") // Проверяет, что дата или время находятся в будущем
+        private LocalDate eventDate;
+        
+        @FutureOrPresent(message = "The date must be in the future or present") // Проверяет, что дата или время находятся в будущем или настоящем
+        private LocalDate deliveryDate;
+
+        @Valid
+        private Address address; // Это не проверка, а аннотация, которая указывает Spring MVC валидировать вложенные объекты. Например, если ваш объект содержит другой объект с валидацией, вы можете аннотировать его @Valid
+
+
+        @NotBlank(message = "Name cannot be blank") // Проверяет, что поле не является null, не пустое и содержит хотя бы один символ, отличный от пробела (используется для строк)
+        private String field2;
+
+        @Size(min = 2, max = 30, message = "Name must be between 2 and 30 characters") // Проверяет размер строки, коллекции, массива или карты. Можно задать минимальный и максимальный размер
+        private String field3;
+
+        // Геттеры и сеттеры
+    }
+```
+
+**Пример контроллера:**
+
+```java
+    @Controller
+    public class UserController {
+
+        @GetMapping("/showForm")
+        public String showForm(Model model) {
+            model.addAttribute("userForm", new UserForm());
+            return "userForm"; // Возвращаем имя представления
+        }
+
+        @PostMapping("/submit")
+        public String submitForm(@Valid @ModelAttribute("userForm") UserForm userForm) {
+            // Обработка данных из формы
+            return "result"; // Возвращаем имя представления с результатом
+        }
+    }
+```
