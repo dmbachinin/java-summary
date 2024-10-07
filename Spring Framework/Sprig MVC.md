@@ -408,7 +408,7 @@ public class HomeController {
     @PostMapping("/submit")
     public String submitForm(@ModelAttribute("user") User user) {
         userService.save(user);
-        return "redirect:/success";
+        return "redirect:/success"; // Перенаправляет запрос на другой адрес (/success)
     }
 ```
 
@@ -459,7 +459,7 @@ public class HomeController {
     @PostMapping("/register")
     public String registerUser(@ModelAttribute("user") User user) { // Автоматически связывает данные формы с объектом User
         userService.save(user);
-        return "redirect:/success";
+        return "redirect:/success"; // Перенаправляет запрос на другой адрес (/success)
     }
 
     // Также можно использовать @ModelAttribute для передачи данных в модель до вызова любого метода контроллера
@@ -935,9 +935,6 @@ Spring MVC предоставляет специальный набор тего
         <!-- items: Коллекция объектов для отображения как набор флажков -->
         <!-- itemValue: Значение, которое будет связано с каждой опцией -->
         <!-- itemLabel: Текст метки для каждого флажка -->
-
-            <ui>
-                <c:forEach >
 
         <!-- Создает элемент HTML <input type="radio">, который позволяет пользователю выбрать один вариант из набора -->
         <form:radiobutton path="gender" value="male" /> Male
