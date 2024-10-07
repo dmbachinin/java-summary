@@ -46,8 +46,15 @@
       - [Использование данных из моделей](#использование-данных-из-моделей)
   - [Формы Spring MVC](#формы-spring-mvc)
     - [HTML Формы](#html-формы)
-    - [Формы с использованием Spring Form Tags](#формы-с-использованием-spring-form-tags)
-    - [Использование объектов-форм (Form Objects) с валидацией](#использование-объектов-форм-form-objects-с-валидацией)
+    - [Spring Form Tags](#spring-form-tags)
+    - [Описание основных тегов](#описание-основных-тегов)
+      - [Внутренние теги для form](#внутренние-теги-для-form)
+      - [Подробнее про теги select, checkboxes, radiobuttons](#подробнее-про-теги-select-checkboxes-radiobuttons)
+      - [Пример написания формы с использованием Spring Form Tags](#пример-написания-формы-с-использованием-spring-form-tags)
+    - [Валидация форм Spring MVC](#валидация-форм-spring-mvc)
+      - [Подключение Hibernate Validator через Maven](#подключение-hibernate-validator-через-maven)
+      - [Аннотации для валидации](#аннотации-для-валидации)
+      - [Создание собственной аннотации для валидации](#создание-собственной-аннотации-для-валидации)
 
 ## Что такое MVC?
 
@@ -875,9 +882,202 @@ HTML-формы являются основным способом сбора д
     </form>
 ```
 
-### Формы с использованием Spring Form Tags
+### Spring Form Tags
 
 Spring MVC предоставляет специальный набор тегов, называемых Spring Form Tags, которые упрощают создание и обработку форм. Эти теги позволяют автоматически связывать поля формы с свойствами модели и обрабатывать валидацию
+
+### Описание основных тегов
+
+`<form:form>` — это специальный тег в Spring MVC, который принадлежит к библиотеке тегов Spring Spring Form Tags и предназначен для создания HTML-формы в JSP. Этот тег автоматически связывает HTML-форму с объектом модели, что делает его удобным для работы с данными формы, их валидацией и передачей обратно в контроллер
+
+Атрибуты <form:form>:
+
+1. `modelAttribute (обязательный)` - Указывает имя объекта, который используется для связывания данных формы. Когда форма отправляется, данные формы будут автоматически сопоставлены с полями объекта userForm
+2. `action` - Указывает URL, на который отправляется форма при нажатии на кнопку "Submit"
+3. `method` - Указывает HTTP-метод, который будет использоваться для отправки формы (get, post, put, delete)
+4. `id` - Присваивает HTML-форме атрибут id, который можно использовать для CSS или JavaScript
+5. `cssClass` - Позволяет задать CSS-класс для формы
+6. `onsubmit` - Указывает JavaScript-функцию, которая будет вызвана при отправке формы
+
+#### Внутренние теги для form
+
+```jsp
+    <%@ taglib uri="http://www.springframework.org/tags/form" prefix="form" %> <!-- Подключение библиотеки для работы с формами -->
+    <form:form action="/submit"   method="post" modelAttribute="user">
+
+        <!-- Создает элемент HTML <input type="text">, который связывается с полем объекта модели -->
+        <form:input path="name" /> 
+        <!-- Атрибуты -->
+        <!-- path: Имя свойства в объекте модели, с которым связывается поле -->
+        <!-- Другие стандартные атрибуты <input>, такие как id, name, maxlength, size и т.д -->
+
+        <!-- Создает элемент HTML <input type="password"> для ввода пароля. -->
+        <form:password path="password" />
+        <!-- Атрибуты -->
+        <!-- path: Имя свойства в объекте модели, с которым связывается поле -->
+
+        <!-- Создает элемент HTML <textarea> для ввода многострочного текста -->
+        <form:textarea path="description" rows="5" cols="20" />
+        <!-- Атрибуты -->
+        <!-- path: Имя свойства в объекте модели, с которым связывается поле -->
+        <!-- Другие атрибуты, такие как cols, rows, maxlength, readonly, и т.д. -->
+
+        <!-- Создает элемент HTML <input type="checkbox">. Этот тег поддерживает как одиночные флажки, так и коллекции флажков -->
+        <form:checkbox path="agreeTerms" />
+        <!-- Атрибуты -->
+        <!-- path: Имя свойства в объекте модели, с которым связывается поле -->
+        <!-- value: Значение, которое будет отправлено, если флажок установлен -->
+
+        <!-- Создает набор флажков для выбора нескольких значений из коллекции -->
+        <form:checkboxes path="selectedOptions" items="${options}" itemValue="id" itemLabel="name" />
+        <!-- Атрибуты -->
+        <!-- path: Имя свойства объекта модели, связанного с коллекцией выбранных значений -->
+        <!-- items: Коллекция объектов для отображения как набор флажков -->
+        <!-- itemValue: Значение, которое будет связано с каждой опцией -->
+        <!-- itemLabel: Текст метки для каждого флажка -->
+
+            <ui>
+                <c:forEach >
+
+        <!-- Создает элемент HTML <input type="radio">, который позволяет пользователю выбрать один вариант из набора -->
+        <form:radiobutton path="gender" value="male" /> Male
+        <form:radiobutton path="gender" value="female" /> Female
+        <!-- Атрибуты -->
+        <!-- path: Имя свойства объекта модели, с которым связывается поле -->
+        <!-- value: Значение, которое будет отправлено, если флажок установлен -->
+
+        <!-- Создает набор радиокнопок, связывая их с коллекцией значений -->
+        <form:radiobuttons path="selectedGender" items="${genders}" itemValue="id" itemLabel="label" />
+        <!-- Атрибуты -->
+        <!-- path: Имя свойства объекта модели, с которым связываются радиокнопки -->
+        <!-- items: Коллекция объектов для отображения как набор радиокнопок -->
+        <!-- itemValue: Значение, которое будет связано с каждой радиокнопкой -->
+        <!-- itemLabel: Текст метки для каждой радиокнопки -->
+
+        <!-- Создает элемент HTML <select> для выбора одного или нескольких значений из выпадающего списка -->
+        <form:select path="country" items="${countries}" itemValue="code" itemLabel="name" />
+        <!-- Атрибуты -->
+        <!-- path: Имя свойства объекта модели, с которым связывается поле -->
+        <!-- items: Коллекция объектов для отображения как опции списка -->
+        <!-- itemValue: Значение для каждой опции -->
+        <!-- itemLabel: Текст метки для каждой опции -->
+        <!-- multiple: Указывает, можно ли выбрать несколько значений (если true, создается <select multiple>) -->
+
+        <!-- Создает отдельную опцию для тега <select> -->
+        <form:select path="country">
+            <form:option value="IN">India</form:option>
+            <form:option value="US">USA</form:option>
+        </form:select>
+        <!-- Атрибуты -->
+        <!-- value: Значение для этой опции -->
+
+        <!-- Используется для генерации набора <option> элементов на основе коллекции значений -->
+        <form:select path="country">
+            <form:options items="${countries}" itemValue="code" itemLabel="name" />
+        </form:select>
+        <!-- Атрибуты -->
+        <!-- items: Коллекция объектов для отображения как опции списка -->
+        <!-- itemValue: Значение для каждой опции -->
+        <!-- itemLabel: Текст метки для каждой опции -->
+
+        <!-- Создает скрытое поле HTML (<input type="hidden">), которое используется для хранения данных, которые не должны отображаться на странице, но передаются на сервер при отправке формы -->
+        <form:hidden path="userId" />
+        <!-- Атрибуты -->
+        <!-- path: Имя свойства объекта модели, с которым связывается скрытое поле -->
+
+        <!-- Используется для отображения сообщений об ошибках валидации, связанных с определенным полем -->
+        <form:errors path="name" cssClass="error" />
+        <!-- Атрибуты -->
+        <!-- path: Имя свойства объекта модели, с которым связаны ошибки валидации -->
+        <!-- cssClass: Имя класса CSS, которое будет применено к элементу при отображении ошибки -->
+        <!-- element: Тег HTML, который будет использоваться для отображения ошибок (например, span, div) -->
+
+        <!-- Создает HTML-элемент <label>, связанный с определенным полем формы -->
+        <form:label path="name">Name:</form:label>
+        <!-- Атрибуты -->
+        <!-- path: Имя свойства объекта модели, к которому будет привязан <label> -->
+
+        <!-- Создает HTML-элемент <button> для отправки формы или выполнения других действий -->
+        <form:button>Submit</form:button>
+        <!-- Атрибуты -->
+        <!-- name: Имя кнопки -->
+        <!-- value: Значение кнопки -->
+        <!-- Другие стандартные атрибуты для кнопки HTML -->
+    </form:form>
+```
+
+#### Подробнее про теги select, checkboxes, radiobuttons
+
+Теги `Spring Form Tags`, такие как <form:select>, <form:checkboxes>, и <form:radiobuttons>, используются для отображения набора элементов на основе коллекций данных. Они позволяют вам динамически создавать выпадающие списки, группы флажков или радиокнопок на основе коллекции объектов. Эти теги работают с коллекциями и позволяют настроить, какие значения (itemValue) и метки (itemLabel) будут отображены в форме.
+
+**Как работают атрибуты:**
+
+- `items`: Это коллекция объектов (например, List, Set, Map или массив), которая содержит данные для отображения. Каждый элемент коллекции будет преобразован в HTML-элемент (например, option, input type="checkbox", или input type="radio").
+- `itemValue`: Это свойство объекта, которое будет использоваться как атрибут value в HTML-элементе (например, option value="..."). Т.е. это поле объекта, которое будет передано в случае его выбора
+- `itemLabel`: Это свойство объекта, которое будет отображаться как текстовая метка для каждого HTML-элемента. Т.е. это поле объекта, которое будет выводиться на экран пользователю.
+
+Если в качетсве параметра items использовать `Map`, то необязательно указывать теги `itemValue`, `itemLabel`.
+**Все ключи будут автоматически подставлены в теги itemValue, а все значения в itemLabel**
+
+**Пример реализации:**
+
+```java
+    // Объект модели, который будет использоваться в списке
+    public class Country {
+        private String code;
+        private String name;
+        // Конструкторы, геттеры и сеттеры
+    }
+
+    // Контроллер
+    @Controller
+    public class UserController {
+
+        @GetMapping("/showForm")
+        public String showForm(Model model) {
+            // Создаем список стран, которые будем использовать в форме
+            List<Country> countries = new ArrayList<>();
+            countries.add(new Country("IN", "India"));
+            countries.add(new Country("US", "United States"));
+            countries.add(new Country("CN", "China"));
+
+            // Добавляем список в модель
+            model.addAttribute("countries", countries);
+
+            // Передаем пустой объект формы
+            model.addAttribute("userForm", new UserForm());
+            return "userForm";
+        }
+    }
+```
+
+**Форма JSP:**
+
+```jsp
+    <%@ taglib uri="http://www.springframework.org/tags/form" prefix="form" %>
+    <form:form action="submitForm" method="post" modelAttribute="userForm">
+        <!-- Выпадающий список для выбора страны -->
+        <form:label path="country">Country:</form:label>
+        <form:select path="country" items="${countries}" itemValue="code" itemLabel="name" />
+        <!-- items="${countries}": Коллекция объектов Country, которые будут использоваться для создания <option> -->
+        <!-- itemValue="code": Поле code объекта Country будет использовано как атрибут value для каждого элемента <option> -->
+        <!-- itemLabel="name": Поле name объекта Country будет отображаться как текст внутри элемента <option> -->
+        
+        <input type="submit" value="Submit" />
+    </form:form>
+```
+
+**Результирующий HTML-код:**
+
+```html
+<select name="country">
+    <option value="IN">India</option>
+    <option value="US">United States</option>
+    <option value="CN">China</option>
+</select>
+```
+
+#### Пример написания формы с использованием Spring Form Tags
 
 **Пример контроллера:**
 
@@ -899,22 +1099,67 @@ Spring MVC предоставляет специальный набор тего
     }
 ```
 
+**Пример формы:**
+
 ```jsp
-    <%@ taglib uri="http://www.springframework.org/tags/form" prefix="form" %> <!-- Подключение библиотеки для работы с формами -->
-    <form:form action="/submit" method="post" modelAttribute="user">
-        <form:label path="name">Name:</form:label>
-        <form:text path="name" required="true" />
+    <%@ taglib uri="http://www.springframework.org/tags/form" prefix="form" %>
+    <html>
+    <head>
+        <title>User Form</title>
+    </head>
+    <body>
+        <h1>Fill the User Form</h1>
+        <form:form action="submitForm" method="post" modelAttribute="userForm">
+            <form:label path="name">Name:</form:label>
+            <form:input path="name" />
+            <form:errors path="name" cssClass="error" />
+            <br>
 
-        <form:label path="age">Age:</form:label>
-        <form:input path="age" required="true" />
+            <form:label path="password">Password:</form:label>
+            <form:password path="password" />
+            <form:errors path="password" cssClass="error" />
+            <br>
 
-        <input type="submit" value="Submit" />
-    </form:form>
+            <form:label path="description">Description:</form:label>
+            <form:textarea path="description" rows="5" cols="20" />
+            <form:errors path="description" cssClass="error" />
+            <br>
+
+            <form:label path="agreeTerms">Agree to Terms:</form:label>
+            <form:checkbox path="agreeTerms" />
+            <form:errors path="agreeTerms" cssClass="error" />
+            <br>
+
+            <form:label path="country">Country:</form:label>
+            <form:select path="country" items="${countries}" itemValue="code" itemLabel="name" />
+            <form:errors path="country" cssClass="error" />
+            <br>
+
+            <form:hidden path="userId" />
+            <br>
+
+            <form:button>Submit</form:button>
+        </form:form>
+    </body>
+    </html>
 ```
 
-### Использование объектов-форм (Form Objects) с валидацией
+### Валидация форм Spring MVC
 
 Иногда имеет смысл использовать отдельные классы для представления данных формы, особенно если форма сложная или содержит много полей. Такие классы называются Form Objects
+
+#### Подключение Hibernate Validator через Maven
+
+```xml
+    <!-- https://mvnrepository.com/artifact/org.hibernate/hibernate-validator -->
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-validator</artifactId>
+        <version>8.0.0.Final</version>
+    </dependency>
+```
+
+#### Аннотации для валидации
 
 **Объект формы с валидацией:**
 
@@ -968,7 +1213,6 @@ Spring MVC предоставляет специальный набор тего
         @Valid
         private Address address; // Это не проверка, а аннотация, которая указывает Spring MVC валидировать вложенные объекты. Например, если ваш объект содержит другой объект с валидацией, вы можете аннотировать его @Valid
 
-
         @NotBlank(message = "Name cannot be blank") // Проверяет, что поле не является null, не пустое и содержит хотя бы один символ, отличный от пробела (используется для строк)
         private String field2;
 
@@ -992,9 +1236,61 @@ Spring MVC предоставляет специальный набор тего
         }
 
         @PostMapping("/submit")
-        public String submitForm(@Valid @ModelAttribute("userForm") UserForm userForm) {
-            // Обработка данных из формы
+        public String submitForm(@Valid @ModelAttribute("userForm") UserForm userForm, // Для данного валидации необходима аннотация @Valid
+                               BindingResult bindingResult // Данный параметр хранит информацию о ошибках. ДАННЫЙ ПАРАМЕТР ДОЛЖЕН ИДИТ СРАЗУ ПОСЛЕ ПАРАМЕТРА С @Valid
+                               ) {
+            if (bindingResult.hasErrors()) { // Проверяем наличие ошибок в форме, которую скинул пользователь
+                return "userForm"; // выводим форму, в которой могу отобразиться ошибки (с тегом form:errors)
+            }
             return "result"; // Возвращаем имя представления с результатом
+        }
+    }
+```
+
+#### Создание собственной аннотации для валидации
+
+```java
+
+    import jakarta.validation.Constraint;
+    import jakarta.validation.Payload;
+    import java.lang.annotation.ElementType;
+    import java.lang.annotation.Retention;
+    import java.lang.annotation.RetentionPolicy;
+    import java.lang.annotation.Target;
+    // Создание аннотации
+    @Target(Element.Field) // Указываем, что аннотация применяется к полям
+    @Retention(RetentionPolicy.RUNTIME) // Указываем, что аннотация должна работать во время работы программы
+    @Constrain(validatedBy = Validator.class) // Указываем класс, который будет валидировать значения
+    public @interface Check {
+        public String value() default "Стандарное значение";
+        public String message() default "Сообщение об ошибке";
+        
+        Class<?>[] groups() default {}; // Группы валидации
+        Class<? extends Payload>[] payload() default {}; // Дополнительные метаданные для передачи
+        // Эти параметры обязательны по спецификации, даже если они не используются. Они позволяют группировать валидаторы и передавать дополнительные данные.
+    }
+
+    // Создание класса-валидатора
+    public class Validator implements ConstraintValidator<Check, String> {
+        // ConstraintValidator - это обобщённый (generic) интерфейс, который принимает 2 параметра
+        //  * Check -  это ваша кастомная аннотация, которую вы создаете для валидации. Этот параметр указывает тип аннотации, с которой связан валидатор
+        //  * String — это тип данных, который будет валидироваться. Этот параметр указывает тип значения, которое валидатор должен проверять
+
+        private String prefix;
+
+        // Метод инициализации, здесь получаем значение префикса из аннотации
+        @Override
+        public void initialize(Check constraintAnnotation) {
+            this.prefix = constraintAnnotation.value();
+        }
+
+        // Основная логика валидации
+        @Override
+        public boolean isValid(String value, ConstraintValidatorContext context) {
+            if (value == null) {
+                return true; // null значения не валидируются
+            }
+            return value.startsWith(prefix); // Проверка на валидность
         }
     }
 ```
