@@ -22,7 +22,7 @@
   - [@Controller](#controller)
     - [@RequestMapping](#requestmapping)
     - [@GetMapping, @PostMapping, @PutMapping, @DeleteMapping](#getmapping-postmapping-putmapping-deletemapping)
-      - [@ResponseBody](#responsebody)
+    - [@ResponseBody](#responsebody)
     - [Обработка параметров](#обработка-параметров)
       - [Параметры запроса (Query Parameters) — @RequestParam](#параметры-запроса-query-parameters--requestparam)
       - [Переменные пути (Path Variables) — @PathVariable](#переменные-пути-path-variables--pathvariable)
@@ -241,7 +241,7 @@
 Основная задача `InternalResourceViewResolver`:
 `InternalResourceViewResolver` используется для преобразования имени представления, которое возвращается из контроллера (например, `"home"`), в фактический путь к ресурсу на сервере (например, `/WEB-INF/views/home.jsp`), который затем отображается пользователю.
 
-Как это работает:
+**Как это работает:**
 
 - Когда контроллер в Spring MVC возвращает строку с именем представления, **`InternalResourceViewResolver`** добавляет к этому имени префикс и суффикс, чтобы сформировать полный путь к файлу.
 - Пример: если контроллер возвращает строку `"home"`, и у `InternalResourceViewResolver` установлен префикс `/WEB-INF/views/` и суффикс `.jsp`, то итоговый путь будет `/WEB-INF/views/home.jsp`.
@@ -379,7 +379,12 @@ public class HomeController {
 
 `@RequestMapping`: Используется для задания маршрутов и указания HTTP-методов для обработки запросов
 
-!Все пути должны быть уникальными, иначе возникнет ошибка при которой программа не будет понимать какой View отображать.
+- Все пути должны быть уникальными, иначе возникнет ошибка при которой программа не будет понимать какой View отображать.
+
+**Отличия `GET` и `POST` методов:**
+
+- `GET` запрос хранит всю передаваемую информацию в URL адресе при помоши Query параметров. Тело самого запроса при этом пустое
+- `POST` запрос хранит все данные в теле запроса, что обеспечивает безопасноть данных
 
 ```java
     @Controller
@@ -399,6 +404,11 @@ public class HomeController {
 
 @GetMapping, @PostMapping, @PutMapping, @DeleteMapping: Это сокращенные версии @RequestMapping для конкретных HTTP-методов (GET, POST и т.д.)
 
+**Отличия `GET` и `POST` методов:**
+
+- `GET` запрос хранит всю передаваемую информацию в URL адресе при помоши Query параметров. Тело самого запроса при этом пустое
+- `POST` запрос хранит все данные в теле запроса, что обеспечивает безопасноть данных
+
 ```java
     @GetMapping("/form")
     public String showForm() {
@@ -412,7 +422,7 @@ public class HomeController {
     }
 ```
 
-#### @ResponseBody
+### @ResponseBody
 
 @ResponseBody: Используется для указания, что возвращаемые данные должны быть напрямую записаны в тело HTTP-ответа (например, JSON или XML)
 
