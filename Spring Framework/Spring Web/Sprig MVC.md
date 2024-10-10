@@ -10,6 +10,7 @@
   - [Конфигурация web.xml](#конфигурация-webxml)
     - [Основные элементы конфигурации web.xml](#основные-элементы-конфигурации-webxml)
     - [Конфигурация servlet через applicationContext.xml](#конфигурация-servlet-через-applicationcontextxml)
+  - [Конфигурация  web.xml через Java class](#конфигурация--webxml-через-java-class)
   - [InternalResourceViewResolver](#internalresourceviewresolver)
     - [Основные свойства и методы](#основные-свойства-и-методы)
     - [Пример работы с контроллером](#пример-работы-с-контроллером)
@@ -23,6 +24,8 @@
     - [@RequestMapping](#requestmapping)
     - [@GetMapping, @PostMapping, @PutMapping, @DeleteMapping](#getmapping-postmapping-putmapping-deletemapping)
     - [@ResponseBody](#responsebody)
+    - [Централизованная обработка исключений через @ControllerAdvice](#централизованная-обработка-исключений-через-controlleradvice)
+      - [@ExceptionHandler](#exceptionhandler)
     - [Обработка параметров](#обработка-параметров)
       - [Параметры запроса (Query Parameters) — @RequestParam](#параметры-запроса-query-parameters--requestparam)
       - [Переменные пути (Path Variables) — @PathVariable](#переменные-пути-path-variables--pathvariable)
@@ -104,32 +107,10 @@
 ### Подключение зависимостей Spring MVC для Maven
 
  ```xml
-        <properties>
-            <spring.version>6.1.6</spring.version>
-        </properties>
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-beans</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-core</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
-            <version>${spring.version}</version>
+            <version>6.1.6</version>
         </dependency>
         <!-- Для Spring ниже 5 -->
         <dependency>
@@ -232,6 +213,30 @@
             <property name="dataSource" ref="dataSource" />
         </bean>
     </beans>
+```
+
+## Конфигурация  web.xml через Java class
+
+```java
+    import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+
+    public class WebInit extends AbstractAnnotationConfigDispatcherServletInitializer {
+
+        @Override
+        protected Class<?>[] getRootConfigClasses() {
+            return null;
+        }
+
+        @Override
+        protected Class<?>[] getServletConfigClasses() {
+            return new Class[]{Config.class}; // Конфиг класс. Заменяет applicationContext.xml
+        }
+
+        @Override
+        protected String[] getServletMappings() {
+            return new String[]{"/"}; // Указывает какие запросы будут перехватываться
+        }
+    }
 ```
 
 ## InternalResourceViewResolver
@@ -430,7 +435,84 @@ public class HomeController {
     @GetMapping("/api/users")
     @ResponseBody
     public List<User> getUsers() {
-        return userService.findAll();
+        return userService.findAll(); // Данный метод вернет JSON
+    }
+
+    @PostMapping("/emp")
+    public Employee addEmp(@RequestBody Employee emp) { // Данная конфигурация преобразует JSON файл, который был передан на сервер в Employee
+        return emp;
+    }
+```
+
+### Централизованная обработка исключений через @ControllerAdvice
+
+`@ControllerAdvice` — это аннотация в Spring Framework, которая позволяет централизовать обработку исключений, а также выполнять общую логику для всех или нескольких контроллеров. Она используется для глобальной обработки исключений, валидации данных или модификации HTTP-ответов, применяя их к группе или всем контроллерам
+
+**Основные возможности и применения @ControllerAdvice:**
+
+- `Глобальная обработка исключений`: Вместо того чтобы обрабатывать исключения в каждом контроллере по отдельности с помощью аннотации @ExceptionHandler, можно вынести эту логику в один класс с @ControllerAdvice, который будет применяться ко всем контроллерам приложения.
+- `Общая обработка данных для всех контроллеров`: @ControllerAdvice также можно использовать для внедрения данных в модель, которая будет доступна всем методам контроллеров, или для выполнения какой-либо общей логики перед каждым запросом.
+- `Обработка валидационных ошибок`: В связке с механизмом валидации Spring можно обрабатывать ошибки валидации и предоставлять единый способ их отображения или обработки.
+
+**Пример:**
+
+```java
+    @ControllerAdvice
+    public class GlobalExceptionHandler {
+
+        // Обработка IllegalArgumentException
+        @ExceptionHandler(IllegalArgumentException.class)
+        public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException ex) {
+            return new ResponseEntity<>("Некорректные данные: " + ex.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+
+        // Обработка любого другого исключения
+        @ExceptionHandler(Exception.class)
+        public ResponseEntity<String> handleGeneralException(Exception ex) {
+            return new ResponseEntity<>("Произошла ошибка: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+```
+
+#### @ExceptionHandler
+
+Аннотация `@ExceptionHandler` в Spring используется для обработки исключений, возникающих в контроллерах. Она позволяет создать централизованный механизм для перехвата и обработки исключений, предоставляя более гибкий способ управления ошибками в приложении.
+
+**Как работает @ExceptionHandler:**
+
+- `Перехват исключений`: Когда в контроллере возникает исключение, вместо того чтобы возвращать стандартный HTTP-ответ с ошибкой (например, 500 Internal Server Error), Spring может передать исключение методу, помеченному @ExceptionHandler. Этот метод затем обрабатывает исключение и возвращает нужный HTTP-ответ или данные.
+- `Централизованная обработка`: Вы можете настроить обработку исключений как для конкретного контроллера, так и для всех контроллеров в приложении. Это позволяет централизовать логику обработки ошибок
+
+**Пример:**
+
+```java
+    @RestController
+    public class MyRestController {
+
+        // Метод, который обрабатывает исключение IllegalArgumentException
+        @ExceptionHandler(IllegalArgumentException.class)
+        public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException ex) {
+            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+
+        // Обработка нескольких типов исключений
+        @ExceptionHandler({IllegalArgumentException.class, NullPointerException.class})
+        public ResponseEntity<String> handleMultipleExceptions(Exception ex) {
+            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+        // ResponseEntity<T> — это специализированный объект Spring, который представляет весь HTTP-ответ
+        // ResponseEntity позволяет вам полностью управлять содержимым HTTP-ответа, включая статус и заголовки, что особенно важно для обработки исключений
+    }
+
+    @Controller
+    public class MyController {
+
+        // Обработка исключения и возврат страницы с ошибкой
+        @ExceptionHandler(IllegalArgumentException.class)
+        public String handleIllegalArgumentException(Model model, IllegalArgumentException ex) {
+            model.addAttribute("errorMessage", ex.getMessage());
+            return "error-page"; // Вернет страницу error-page.html
+        }
     }
 ```
 

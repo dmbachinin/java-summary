@@ -153,18 +153,46 @@ Spring ORM добавляет и использует несколько клю�
 #### @Repository
 
 **Описание**: Эта аннотация используется для маркировки DAO- или репозиторий-классов, которые работают с базой данных. Она сообщает Spring, что класс содержит логику доступа к данным. Кроме того, эта аннотация автоматически обрабатывает исключения, переводя их в `DataAccessException`.
+
 **Пример использования**:
 
 ```java
     @Repository
     public class UserRepository {
         @PersistenceContext
-        private EntityManager entityManager;
+        private EntityManager entityManager; // Это интерфейс JPA, который позволяет управлять состоянием сущностей, выполнять запросы и управлять транзакциями
         
+        @Transactional
         public void save(User user) {
             entityManager.persist(user);
         }
     }
+
+    @Repository
+    public class OperationDaoImpl implements OperationDao {
+
+        private final SessionFactory sessionFactory; // Использование фабрики сессий
+
+        @Autowired
+        public OperationDaoImpl(SessionFactory sessionFactory) {
+            this.sessionFactory = sessionFactory;
+        }
+
+        private Session getCurrentSession() {
+            return sessionFactory.getCurrentSession();
+        }
+
+        @Override
+        @Transactional
+        public Optional<OperationInfo> findById(String id) {
+            return Optional.ofNullable(getCurrentSession().find(OperationInfo.class, id));
+        }
+    }
+    /* Основные различия:
+        Абстракция: EntityManager — это абстракция JPA, тогда как SessionFactory и Session — это специфичные для Hibernate объекты.
+        Инъекция зависимостей: EntityManager внедряется с помощью @PersistenceContext, а SessionFactory через конструктор и @Autowired.
+        Управление сессиями и транзакциями: В Hibernate явное управление сессиями и транзакциями может потребовать большего контроля, тогда как JPA упрощает это за счет стандартизированного подхода
+    */
 ```
 
 #### @Service
@@ -231,7 +259,8 @@ Spring ORM добавляет и использует несколько клю�
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
-            <version>5.6.7.Final</version>
+            <version>6.5.2.Final</version>
+            <type>pom</type>
         </dependency>
 
         <!-- PostgreSQL Connector -->
