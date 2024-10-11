@@ -16,6 +16,8 @@
     - [PasswordEncoder](#passwordencoder)
       - [BCryptPasswordEncoder](#bcryptpasswordencoder)
       - [Пример использования](#пример-использования)
+  - [Настройка Spring Security для Web приложения](#настройка-spring-security-для-web-приложения)
+    - [Настройка через SecurityFilterChain (новый подход)](#настройка-через-securityfilterchain-новый-подход)
 
 ## Spring Security Основная информация
 
@@ -68,7 +70,7 @@ Spring Security работает через набор фильтров, кот�
 ```xml
     <dependency>
         <groupId>org.springframework.security</groupId>
-        <artifactId>spring-security-core</artifactId>
+        <artifactId>spring-security-core</artifactId> <!-- Данная зависимость может быть учтена в spring-security-web -->
         <version>5.8.1</version> 
     </dependency>
     <dependency>
@@ -153,4 +155,62 @@ PasswordEncoder является абстракцией, которая позв
 
     boolean isPasswordMatch = encoder.matches("userInputPassword", hashedPassword); // Проверка правильности пароля в сравеннии с хешем
 
+```
+
+## Настройка Spring Security для Web приложения
+
+### Настройка через SecurityFilterChain (новый подход)
+
+С новой версией Spring Security (5.7+), конфигурация безопасности выглядит следующим образом
+
+```java
+    import org.springframework.context.annotation.Bean;
+`import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+
+    // Конфигурация цепочки фильтров безопасности
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeRequests() // Конфигурация авторизации
+                .antMatchers("/admin/**").hasRole("ADMIN") // Доступ для ролей ADMIN
+                .antMatchers("/user/**").hasRole("USER")   // Доступ для ролей USER
+                .antMatchers("/").permitAll()              // Главная страница доступна всем
+                .and()
+            .formLogin(); // Стандартная форма логина
+        return http.build();
+    }
+
+    // Определение пользователей в памяти
+    @Bean
+    public UserDetailsService userDetailsService() {
+        UserDetails user = User.withUsername("user")
+                .password(passwordEncoder().encode("password"))
+                .roles("USER")
+                .build();
+
+        UserDetails admin = User.withUsername("admin")
+                .password(passwordEncoder().encode("admin"))
+                .roles("ADMIN")
+                .build();
+
+        return new InMemoryUserDetailsManager(user, admin);
+    }
+
+    // Шифрование паролей
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
 ```

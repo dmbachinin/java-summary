@@ -237,6 +237,18 @@
             return new String[]{"/"}; // Указывает какие запросы будут перехватываться
         }
     }
+
+    // Конфигурация ViewResolver
+    @Configuration
+    @ComponentScan(basePackages = "ru.spring_mvc")
+    @EnableWebMvc
+    public class Config {
+
+        @Bean
+        public ViewResolver viewResolver() {
+            return new InternalResourceViewResolver("/WEB-INF/view", ".jsp");
+        }
+    }
 ```
 
 ## InternalResourceViewResolver
