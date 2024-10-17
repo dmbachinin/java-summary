@@ -18,9 +18,12 @@
       - [Подключение через Maven](#подключение-через-maven)
     - [LocalSessionFactoryBean](#localsessionfactorybean)
     - [HibernateTransactionManager](#hibernatetransactionmanager)
-    - [Пример настройки через Java-конфигурацию](#пример-настройки-через-java-конфигурацию)
+    - [Пример настройки Hibernate через Java-конфигурацию](#пример-настройки-hibernate-через-java-конфигурацию)
     - [Основные причины указывать @Transactional в методах сервисов](#основные-причины-указывать-transactional-в-методах-сервисов)
     - [Почему не стоит использовать `@Transactional` только в DAO?](#почему-не-стоит-использовать-transactional-только-в-dao)
+  - [Использование чистого JPA в приложении](#использование-чистого-jpa-в-приложении)
+    - [Пример настройки чистого JPA через Java-конфигурацию](#пример-настройки-чистого-jpa-через-java-конфигурацию)
+    - [Пример кода](#пример-кода)
 
 ## Основы Spring ORM
 
@@ -171,7 +174,7 @@ Spring ORM добавляет и использует несколько клю�
     @Repository
     public class OperationDaoImpl implements OperationDao {
 
-        private final SessionFactory sessionFactory; // Использование фабрики сессий
+        private final SessionFactory sessionFactory; // Использование фабрики сессий из Hibernate
 
         @Autowired
         public OperationDaoImpl(SessionFactory sessionFactory) {
@@ -378,7 +381,7 @@ Spring ORM добавляет и использует несколько клю�
 
 ```
 
-### Пример настройки через Java-конфигурацию
+### Пример настройки Hibernate через Java-конфигурацию
 
 ```java
     @Configuration
@@ -495,3 +498,114 @@ Spring ORM добавляет и использует несколько клю�
 
 3. **Трудности с масштабированием и поддержкой**
    - При наличии транзакций только на уровне DAO становится сложнее поддерживать и масштабировать приложение, так как логика транзакций не находится в том месте, где реально осуществляется бизнес-логика. Это приводит к потенциальным проблемам в будущем при изменении бизнес-требований.
+
+## Использование чистого JPA в приложении
+
+Использование чистого JPA (Java Persistence API) в приложениях Spring встречается реже, так как Spring предоставляет более высокоуровневую абстракцию в виде Spring Data JPA. Однако, бывают случаи, когда использование чистого JPA оправдано.
+
+### Пример настройки чистого JPA через Java-конфигурацию
+
+```java
+    import org.springframework.context.annotation.Bean;
+    import org.springframework.context.annotation.Configuration;
+    import org.springframework.orm.jpa.JpaTransactionManager;
+    import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+    import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+    import org.springframework.transaction.PlatformTransactionManager;
+    import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
+    import javax.persistence.EntityManagerFactory;
+    import javax.sql.DataSource;
+    import java.util.Properties;
+
+    @Configuration
+    public class JpaConfig {
+
+        // 1. DataSource: бин для настройки подключения к базе данных.
+        // Этот бин управляет подключением к базе данных, включая URL, имя пользователя и пароль.
+        @Bean
+        public DataSource dataSource() {
+            DriverManagerDataSource dataSource = new DriverManagerDataSource();
+            // Указываем класс драйвера для подключения (здесь используется H2).
+            dataSource.setDriverClassName("org.h2.Driver");
+            // URL подключения к базе данных (в данном случае, база данных в памяти).
+            dataSource.setUrl("jdbc:h2:mem:testdb");
+            // Имя пользователя и пароль для доступа к базе данных.
+            dataSource.setUsername("sa");
+            dataSource.setPassword("");
+            return dataSource;
+        }
+
+        // 2. EntityManagerFactory: бин для создания и настройки фабрики EntityManager.
+        // Этот бин управляет созданием EntityManager, который необходим для выполнения операций JPA.
+        @Bean
+        public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+            LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
+            // Указываем DataSource, чтобы EntityManager знал, к какой базе данных подключаться.
+            em.setDataSource(dataSource);
+            // Указываем пакет, в котором находятся сущности (Entity).
+            em.setPackagesToScan("com.example.model");
+
+            // Указываем адаптер JPA, который используется для конкретной реализации JPA (здесь Hibernate).
+            HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+            em.setJpaVendorAdapter(vendorAdapter);
+
+            // Настройки Hibernate, которые будут использоваться.
+            Properties properties = new Properties();
+            // Автоматическое создание и обновление схемы базы данных при запуске.
+            properties.setProperty("hibernate.hbm2ddl.auto", "update");
+            // Указываем диалект Hibernate для базы данных H2.
+            properties.setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
+            // Добавляем эти свойства к настройке фабрики.
+            em.setJpaProperties(properties);
+
+            return em;
+        }
+
+        // 3. PlatformTransactionManager: бин для управления транзакциями.
+        // Этот бин отвечает за управление транзакциями при работе с JPA.
+        @Bean
+        public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
+            // Используем JpaTransactionManager для работы с транзакциями JPA.
+            return new JpaTransactionManager(entityManagerFactory);
+        }
+    }
+```
+
+### Пример кода
+
+```java
+    import javax.persistence.EntityManager;
+    import javax.persistence.PersistenceContext;
+    import javax.transaction.Transactional;
+    import org.springframework.stereotype.Repository;
+
+    @Repository
+    public class MyEntityRepository {
+
+        @PersistenceContext
+        private EntityManager entityManager;
+
+        @Transactional
+        public void save(MyEntity entity) {
+            entityManager.persist(entity);
+        }
+
+        public MyEntity findById(Long id) {
+            return entityManager.find(MyEntity.class, id);
+        }
+
+        @Transactional
+        public void update(MyEntity entity) {
+            MyEntity newEntity = entityManager.merge(entity); // Если у entity id = 0, то будет выполнено добавление нового объекта в базу данных
+            entity.setId(newEntity.getId()) // Устанавливаем для переданного объекта id, которые сгенерировала база, чтобы можно было вернуть актуальную информацию
+        }
+
+        @Transactional
+        public void delete(Long id) {
+            Query query = entityManager.createQuery("delete from MyEntity WHERE id = :id");
+            query.setParameter("id", id);
+            query.executeUpdate();
+        }
+    }
+```
