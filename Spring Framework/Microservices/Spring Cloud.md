@@ -33,6 +33,13 @@
     - [Алгоритмы балансировки нагрузки](#алгоритмы-балансировки-нагрузки)
     - [Использование Load Balancer в Spring Cloud](#использование-load-balancer-в-spring-cloud)
       - [Настройка балансировщика в Spring Cloud Gateway](#настройка-балансировщика-в-spring-cloud-gateway)
+  - [Spring Cloud Config Server](#spring-cloud-config-server)
+    - [Подключение Spring Cloud Config Server](#подключение-spring-cloud-config-server)
+    - [Основные настройки для Config Server](#основные-настройки-для-config-server)
+    - [Использование аннотации @EnableConfigServer](#использование-аннотации-enableconfigserver)
+  - [Spring Cloud Config Client](#spring-cloud-config-client)
+    - [Подключение Spring Cloud Config Client](#подключение-spring-cloud-config-client)
+    - [Настройка приложения клиента](#настройка-приложения-клиента)
 
 ## Зачем нужен Spring Cloud?
 
@@ -494,7 +501,7 @@ eureka.instance.instance-id=custom-instance-id # указание уникаль
     # Порт, который обычно используют для API Gateway
     server.port=8765
 
-    eureka.client.service-url.defaultZone=eureka.client.service-url.defaultZone=http://localhost:8761/eureka
+    eureka.client.service-url.defaultZone=http://localhost:8761/eureka
 
     # Настройка указывает Spring Cloud Gateway автоматически находить зарегистрированные в Eureka (или другом сервисе) сервисы и динамически маршрутизировать запросы к ним
     spring.cloud.gateway.discovery.locator.enabled=true
@@ -705,4 +712,125 @@ eureka.instance.instance-id=custom-instance-id # указание уникаль
 # Включение LoadBalancer в Spring Cloud Gateway
 spring.cloud.loadbalancer.enabled=true
 spring.cloud.gateway.discovery.locator.enabled=true
+```
+
+## Spring Cloud Config Server
+
+`Spring Cloud Config Server` — это компонент в экосистеме Spring Cloud, предоставляющий централизованное управление конфигурацией приложений. Он поддерживает множество свойств для гибкой настройки, включая параметры безопасности, источников данных и кэширования. Основные настройки можно разделить на несколько категорий: настройка Git-репозитория, безопасность и аутентификация, кэширование, конфигурация серверных настроек, и расширенные параметры.
+
+### Подключение Spring Cloud Config Server
+
+```xml
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-config-server</artifactId>
+    </dependency>
+```
+
+### Основные настройки для Config Server
+
+```properties
+    # Стандартный порт для сервера конфигурации
+    server.port=8888
+
+    # Настройка основного репозитория Git для хранения конфигураций
+    spring.cloud.config.server.git.uri=https://github.com/your-org/your-config-repo
+    # Клонировать репозиторий при запуске Config Server (уменьшает задержку при первом запросе)
+    spring.cloud.config.server.git.cloneOnStart=true
+    # Дирректория, в которую будет клонироваться репозиторий (!!!ДАННАЯ ПАПКА БУДЕТ ОЧИЩЕНА!!!)
+    spring.cloud.config.server.git.basedir=/Users/dm/Desktop/git-config
+    # Путь внутри репозитория, где хранятся конфигурационные файлы (если не в корне)
+    spring.cloud.config.server.git.searchPaths=config
+    # Ветка по умолчанию (например, main или master)
+    spring.cloud.config.server.git.default-label=main
+    # Включает форсированное обновление конфигурации при каждом запросе
+    spring.cloud.config.server.git.force-pull=true
+    # Интервал проверки изменений в репозитории (в секундах)
+    spring.cloud.config.server.git.refresh-rate=30
+
+    # Учетные данные для доступа к приватному Git-репозиторию (если требуется)
+    spring.cloud.config.server.git.username=your-git-username
+    spring.cloud.config.server.git.password=your-git-password
+    # Путь к приватному ключу для SSH-доступа
+    spring.cloud.config.server.git.private-key=classpath:/ssh/private_key.pem
+    # Проверка ключа хоста при подключении через SSH (строгая проверка, рекомендована в production)
+    spring.cloud.config.server.git.strict-host-key-checking=true
+
+    # Настройки аутентификации для безопасности Config Server
+    spring.security.user.name=configuser
+    spring.security.user.password=securepassword
+    # Если используется базовая аутентификация для ограниченного доступа к конфигурациям
+    spring.security.basic.enabled=true
+
+    # Параметры для Vault (если используется в качестве конфигурационного источника)
+    spring.cloud.config.server.vault.uri=https://vault.example.com
+    spring.cloud.config.server.vault.token=my-vault-token
+    spring.cloud.config.server.vault.kv-version=2 # Версия ключ-значение для Vault
+
+    # Настройки кэширования (оптимизация производительности для часто запрашиваемых данных)
+    spring.cloud.config.server.cache.enabled=true
+    # Время жизни кэша (TTL) в секундах
+    spring.cloud.config.server.cache.expiration=60
+
+    # Префикс для всех API-эндпоинтов Config Server
+    spring.cloud.config.server.prefix=/config
+
+    # Настройки для получения конфигурации из нескольких источников (composite pattern)
+    spring.cloud.config.server.composite[0].type=git
+    spring.cloud.config.server.composite[0].uri=https://github.com/your-org/another-config-repo
+    spring.cloud.config.server.composite[0].searchPaths=config
+
+    spring.cloud.config.server.composite[1].type=vault
+    spring.cloud.config.server.composite[1].uri=https://vault.example.com
+    spring.cloud.config.server.composite[1].token=my-vault-token
+
+    # Настройки параметров переопределения
+    spring.cloud.config.allowOverride=true    # Разрешить клиентам переопределять значения конфигурации
+    spring.cloud.config.overrideNone=false    # Если true, запрещает переопределение значений, даже если allowOverride=true
+
+    # Основные параметры для конфигураций по умолчанию
+    spring.cloud.config.name=application         # Имя приложения по умолчанию
+    spring.cloud.config.profile=default          # Профиль по умолчанию
+    spring.cloud.config.label=main               # Ветка/лейбл по умолчанию
+
+    # Дополнительные настройки мониторинга и состояния сервера
+    management.endpoint.health.enabled=true      # Включить эндпоинт /health для проверки состояния
+    management.endpoint.info.enabled=true        # Включить эндпоинт /info для получения информации о сервере
+```
+
+### Использование аннотации @EnableConfigServer
+
+```java
+    @SpringBootApplication
+    @EnableConfigServer // Подключение аннотации
+    public class GitConfigServerApplication {
+        public static void main(String[] args) {
+            SpringApplication.run(GitConfigServerApplication.class, args);
+        }
+    }
+```
+
+## Spring Cloud Config Client
+
+`Spring Cloud Config Client` — это клиентская часть системы конфигурации Spring Cloud Config, которая позволяет приложению получать централизованную конфигурацию из удаленного хранилища конфигурации, управляемого сервером `Spring Cloud Config Server`
+
+### Подключение Spring Cloud Config Client
+
+```xml
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-config</artifactId>
+    </dependency>
+```
+
+### Настройка приложения клиента
+
+```properties
+    # Имя приложения. Очень важно, чтобы файл конфигурации назывался {name}.properties
+    spring.application.name=eureka-server
+
+    # Адрес сервера конфигураций
+    spring.config.import=optional:configserver:http://localhost:8888
+    # Запрашиваемый профиль
+    spring.profiles.active=default
 ```
