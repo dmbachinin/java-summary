@@ -40,6 +40,7 @@
   - [Spring Cloud Config Client](#spring-cloud-config-client)
     - [Подключение Spring Cloud Config Client](#подключение-spring-cloud-config-client)
     - [Настройка приложения клиента](#настройка-приложения-клиента)
+    - [Правила считывания настроек из удаленного репозитория](#правила-считывания-настроек-из-удаленного-репозитория)
 
 ## Зачем нужен Spring Cloud?
 
@@ -831,6 +832,13 @@ spring.cloud.gateway.discovery.locator.enabled=true
 
     # Адрес сервера конфигураций
     spring.config.import=optional:configserver:http://localhost:8888
+    # Параметр optional указывает приложенияю, чтобы оно не падало в случае ошибки загрузки конфигурации
     # Запрашиваемый профиль
     spring.profiles.active=default
 ```
+
+### Правила считывания настроек из удаленного репозитория
+
+1. application.properties - настройки из данного файла будут применены ко всем приложениям
+2. application-{profile}.properties - данная настройка будет применена ко всем приложением с указанным profile в spring.profiles.active
+3. {name}.properties - будет применена к приложению с именем name, которое указано в spring.application.name

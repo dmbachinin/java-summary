@@ -16,6 +16,7 @@
     - [Аннотации Hibernate](#аннотации-hibernate)
       - [@Entity](#entity)
       - [@Table](#table)
+      - [@DynamicUpdate](#dynamicupdate)
       - [@Id](#id)
       - [@GeneratedValue](#generatedvalue)
       - [@Column](#column)
@@ -25,6 +26,7 @@
       - [@Lob](#lob)
       - [@Embedded](#embedded)
       - [@Embeddable](#embeddable)
+      - [@Index](#index)
   - [Отношения между таблицами](#отношения-между-таблицами)
     - [Каскадные операции (CascadeType)](#каскадные-операции-cascadetype)
       - [Особенности каскадов](#особенности-каскадов)
@@ -270,6 +272,26 @@ public class User {
 }
 ```
 
+#### @DynamicUpdate
+
+Аннотация @DynamicUpdate в Hibernate используется для оптимизации работы с базой данных при обновлении сущностей. Эта аннотация указывает Hibernate, что обновление записи в базе данных должно быть выполнено только для тех столбцов, которые были изменены, а не для всех столбцов сущности.
+
+**Пример без @DynamicUpdate:**
+
+Если мы обновим объект Product с полями name и price, но изменим только поле price, то Hibernate по умолчанию сгенерирует запрос, который обновит все поля таблицы Product, даже если поле name не было изменено
+
+```sql
+    UPDATE product SET name = ?, price = ? WHERE id = ?
+```
+
+**Пример с @DynamicUpdate:**
+
+Если мы используем @DynamicUpdate, Hibernate сгенерирует только тот запрос, который обновляет изменённое поле
+
+```sql
+    UPDATE product SET price = ? WHERE id = ?
+```
+
 #### @Id
 
 - Указывает поле как первичный ключ таблицы.
@@ -369,6 +391,28 @@ public class Address {
     private String city;
     // Other fields
 }
+```
+
+#### @Index
+
+Аннотация @Index в Hibernate используется для создания индексов на уровне базы данных. Это может помочь повысить производительность запросов, особенно для больших таблиц, где некоторые поля часто используются в фильтрации, сортировке или объединении
+
+```java
+    @Entity
+    @Table(name = "users", indexes = {
+            @Index(name = "idx_username", columnList = "username"), // Создаем индекс на поле username
+            @Index(name = "idx_customer_product", columnList = "customer_id, product_id") // Пример создания составного индекса
+    })
+    public class User {
+        @Column(nullable = false, unique = true)
+        private String username; // Поле, на которое накладывается индекс
+
+        @Column(name = "customer_id", nullable = false)
+        private Long customerId;
+
+        @Column(name = "product_id", nullable = false)
+        private Long productId;
+    }
 ```
 
 ## Отношения между таблицами

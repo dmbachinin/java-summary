@@ -53,6 +53,7 @@
       - [Пример использования Import](#пример-использования-import)
     - [@PropertySource](#propertysource)
       - [Пример использования PropertySource](#пример-использования-propertysource)
+    - [@ConditionalOnProperty](#conditionalonproperty)
     - [@Enable... аннотации](#enable-аннотации)
       - [Пример использования  Enable... аннотаций](#пример-использования--enable-аннотаций)
     - [Использование бинов из классов @Component в @Configuration](#использование-бинов-из-классов-component-в-configuration)
@@ -817,6 +818,22 @@ public class AppConfig2 {
 }
 
 ```
+
+### @ConditionalOnProperty
+
+Аннотация `@ConditionalOnProperty` в Spring используется для условной активации (или деактивации) бина на основе значений свойств, заданных в конфигурации (например, в файле application.properties или application.yml). Это позволяет динамически включать или исключать компоненты в зависимости от значений определённых настроек
+
+**Основной синтаксис:**
+
+```java
+    @ConditionalOnProperty(
+        value = "property.name",  // Имя свойства, которое будет проверяться в конфигурации. Это свойство может быть указано в файле application.properties, application.yml или как переменная окружения
+        havingValue = "true",      // Значение, при котором бин будет активирован. Если значение свойства совпадает с havingValue, бин будет создан
+        matchIfMissing = true     // Указывает, что бин будет активирован, если свойство не найдено (по умолчанию false)
+    )
+```
+
+Аннотация `@ConditionalOnProperty` позволяет настраивать гибкую, условную активацию бинов в зависимости от значений конфигурационных свойств.
 
 ### @Enable... аннотации
 

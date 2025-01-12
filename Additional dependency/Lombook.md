@@ -6,12 +6,16 @@
 
 - [Lombook](#lombook)
   - [Основные функции Lombok](#основные-функции-lombok)
+  - [Подключение Lombook через Maven](#подключение-lombook-через-maven)
   - [Основные аннотации и их функции](#основные-аннотации-и-их-функции)
   - [Дополнительные аннотации](#дополнительные-аннотации)
     - [@Accessors](#accessors)
     - [@With](#with)
     - [@ExtensionMethod](#extensionmethod)
     - [@Data](#data)
+    - [@Slf4j](#slf4j)
+      - [Добавление SLF4J и реализации логгера](#добавление-slf4j-и-реализации-логгера)
+      - [Использование @Slf4j](#использование-slf4j)
 
 ## Основные функции Lombok
 
@@ -24,6 +28,36 @@
    - `@Builder`: Позволяет использовать паттерн «строитель» для создания объектов, что особенно полезно для классов с большим количеством полей.
 3. Улучшение обработки исключений:
    - `@SneakyThrows`: Позволяет игнорировать проверяемые исключения, автоматически оборачивая их в непроверяемые, что упрощает обработку.
+
+## Подключение Lombook через Maven
+
+```xml
+    <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+    <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>1.18.24</version>
+        <scope>provided</scope>
+    </dependency>
+
+    <!-- Настройка плагина для компиляции lombok -->
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.10.1</version>
+        <configuration>
+            <source>${java.version}</source>
+            <target>${java.version}</target>
+            <annotationProcessorPaths>
+                <path>
+                    <groupId>org.projectlombok</groupId>
+                    <artifactId>lombok</artifactId>
+                    <version>${lombok.version}</version>
+                </path>
+            </annotationProcessorPaths>
+        </configuration>
+    </plugin>
+```
 
 ## Основные аннотации и их функции
 
@@ -193,3 +227,43 @@
    - @Data автоматически создает конструктор с параметрами для всех полей класса (аналогично @AllArgsConstructor).
 4. **Поддержка @Value для неизменяемых классов**:
     - Если вы добавите final к полям и используете @Data, он будет вести себя как @Value, создавая неизменяемые объекты
+
+### @Slf4j
+
+`@Slf4j` — это аннотация из библиотеки Lombok, которая автоматически добавляет логгер (логирование) в ваш класс, используя библиотеку SLF4J (Simple Logging Facade for Java). Это позволяет вам писать логирующий код быстрее и чище
+
+#### Добавление SLF4J и реализации логгера
+
+```xml
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>2.0.9</version> <!-- Убедитесь, что версия актуальна -->
+    </dependency>
+    <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.4.11</version>
+    </dependency>
+```
+
+#### Использование @Slf4j
+
+```java
+    @Slf4j // Автоматически добавляет объект логгера 'log'
+    // Аннотация генерирует следующий код внутри класса: private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Example.class);
+
+    public class Example {
+
+        public static void main(String[] args) {
+            log.trace("Trace message");
+            log.debug("Debug message");
+            log.info("Info message");
+            log.warn("Warning message");
+            log.error("Error message");
+            
+            log.debug("User {} logged in at {}", username, LocalDateTime.now()); // Используйте плейсхолдеры для логов, чтобы избежать лишней работы
+
+        }
+    }
+```
