@@ -343,7 +343,7 @@ var value;  // Ошибка: переменная должна быть иниц
     int[] newArr = Arrays.copyOf(arr, 5);
     System.out.println(Arrays.toString(newArr));  // [1, 2, 3, 0, 0]
 
-    static int[] copyOfRange(int[] original, int from, int to); // Копирует диапазон из одного массива в новый массив
+    static int[] copyOfRange(int[] original, int from, int to); // Копирует диапазон из одного массива в новый массив от индекса from до to(исключительно)
     static double[] copyOfRange(double[] original, int from, int to);
     static <T> T[] copyOfRange(T[] original, int from, int to);
 

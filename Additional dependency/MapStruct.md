@@ -32,6 +32,24 @@
             <scope>provided</scope> <!-- Используется только для компиляции -->
         </dependency>
     </dependencies>
+
+    <!-- Настройка плагина для компиляции классов mapstruct -->
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.10.1</version>
+        <configuration>
+            <source>${java.version}</source>
+            <target>${java.version}</target>
+            <annotationProcessorPaths>
+                <path>
+                    <groupId>org.mapstruct</groupId>
+                    <artifactId>mapstruct-processor</artifactId>
+                    <version>${mapstruct.version}</version>
+                </path>
+            </annotationProcessorPaths>
+        </configuration>
+    </plugin>
 ```
 
 ### Подключение через Gradle

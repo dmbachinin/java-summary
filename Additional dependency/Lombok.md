@@ -1,12 +1,12 @@
-# Lombook
+# Lombok
 
 ```plantext
     Lombok — это популярная библиотека для Java, которая значительно упрощает процесс написания кода, сокращая количество шаблонного кода, который разработчики должны вручную писать. Основная цель Lombok — улучшить читабельность и поддерживаемость кода, а также ускорить процесс разработки.
 ```
 
-- [Lombook](#lombook)
+- [Lombok](#lombok)
   - [Основные функции Lombok](#основные-функции-lombok)
-  - [Подключение Lombook через Maven](#подключение-lombook-через-maven)
+  - [Подключение Lombok через Maven](#подключение-lombok-через-maven)
   - [Основные аннотации и их функции](#основные-аннотации-и-их-функции)
   - [Дополнительные аннотации](#дополнительные-аннотации)
     - [@Accessors](#accessors)
@@ -16,6 +16,8 @@
     - [@Slf4j](#slf4j)
       - [Добавление SLF4J и реализации логгера](#добавление-slf4j-и-реализации-логгера)
       - [Использование @Slf4j](#использование-slf4j)
+  - [lombok.config](#lombokconfig)
+    - [Основные настройки](#основные-настройки)
 
 ## Основные функции Lombok
 
@@ -29,7 +31,7 @@
 3. Улучшение обработки исключений:
    - `@SneakyThrows`: Позволяет игнорировать проверяемые исключения, автоматически оборачивая их в непроверяемые, что упрощает обработку.
 
-## Подключение Lombook через Maven
+## Подключение Lombok через Maven
 
 ```xml
     <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
@@ -266,4 +268,40 @@
 
         }
     }
+```
+
+## lombok.config
+
+`lombok.config` — это файл конфигурации библиотеки Lombok, который позволяет управлять поведением этой библиотеки в проекте. Он используется для настройки глобальных и локальных параметров, которые влияют на генерацию кода Lombok'ом, а также помогает задавать правила для разных модулей проекта
+
+**Струтура проекта для lombok.config:**
+
+```plantext
+project/
+│
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   ├── com/
+│   │   │   │   ├── example/
+│   │   │   │   │   ├── MyService.java
+│   │   │   │   │   ├── App.java
+│   │   │   │   │   └── SomeClass.java
+│   │   │   │
+│   │   │
+│   │
+│
+├── pom.xml
+├── lombok.config // Файл должен находится на уровне с pom.xml
+```
+
+### Основные настройки
+
+[Документая по настройкам](https://projectlombok.org/features/configuration)
+
+```config
+    lombok.copyableAnnotations += org.springframework.beans.factory.annotation.Qualifier // Добавляет возможность перенести аннотацию Qualifier  при использовании @RequiredArgsConstructor
+    lombok.copyableAnnotations += org.springframework.beans.factory.annotation.Value
+
+    lombok.log.fieldName=LOG // Меняет названия логгера для @Slf4j
 ```

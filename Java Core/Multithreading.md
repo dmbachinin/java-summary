@@ -19,8 +19,11 @@
     - [Объяснение примера](#объяснение-примера)
       - [Пример с использованием `BlockingQueue`](#пример-с-использованием-blockingqueue)
     - [Объяснение](#объяснение)
-  - [Пул потоков (ExecutorService)](#пул-потоков-executorservice)
-    - [Основные методы ExecutorService](#основные-методы-executorservice)
+  - [Пул потоков](#пул-потоков)
+    - [ExecutorService](#executorservice)
+    - [CompletableFuture](#completablefuture)
+    - [ThreadPoolExecutor](#threadpoolexecutor)
+    - [Сравнительная таблица ExecutorService, CompletableFuture, ThreadPoolExecutor](#сравнительная-таблица-executorservice-completablefuture-threadpoolexecutor)
   - [Механизмы синхронизации](#механизмы-синхронизации)
     - [Мьютекс (Mutex)](#мьютекс-mutex)
       - [Пример использования мьютекса](#пример-использования-мьютекса)
@@ -322,11 +325,11 @@ public class ProducerConsumerExample {
 2. **Производитель и потребитель**:
    - Производитель и потребитель взаимодействуют через общую очередь `BlockingQueue`, используя методы `put` и `take`, которые автоматически блокируют поток при необходимости.
 
-## Пул потоков (ExecutorService)
+## Пул потоков
+
+### ExecutorService
 
 `ExecutorService` — это интерфейс в Java, представляющий пул потоков, который позволяет управлять выполнением асинхронных задач. Он предоставляет мощные и гибкие средства для создания, запуска и управления потоками, что делает его предпочтительным способом работы с многопоточностью в современных Java-приложениях.
-
-### Основные методы ExecutorService
 
 ```java
 
@@ -357,6 +360,123 @@ public class ProducerConsumerExample {
 
     executor.awaitTermination(60, TimeUnit.SECONDS); // Используется для ожидания завершения всех задач после вызова shutdown(). Он блокирует выполнение до тех пор, пока все задачи не завершатся или не истечет заданное время ожидания
 ```
+
+### CompletableFuture
+
+`CompletableFuture` — это класс в Java, предоставляющий мощный API для работы с асинхронными задачами. Он позволяет выполнять задачи параллельно, связывать их в цепочки зависимостей, обрабатывать результаты и исключения. CompletableFuture предоставляет современный способ работы с многопоточностью и асинхронностью.
+
+```java
+    // Создание асинхронной задачи
+    CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+        System.out.println("Task is running asynchronously");
+    }); // Запускает задачу в ForkJoinPool.commonPool() или в пользовательском пуле потоков, если он указан. Используется, если задача не возвращает результат
+
+    CompletableFuture<String> futureWithResult = CompletableFuture.supplyAsync(() -> {
+        return "Result of the task";
+    }); // Похож на runAsync, но возвращает результат выполнения задачи. Используется, если нужно получить результат
+
+    // Обработка результата
+    futureWithResult.thenApply(result -> {
+        return result.toUpperCase();
+    }); // Обрабатывает результат выполнения предыдущей задачи и возвращает новый результат
+
+    futureWithResult.thenAccept(result -> {
+        System.out.println("Processed result: " + result);
+    }); // Обрабатывает результат, не возвращая значения. Используется для побочных эффектов
+
+    // Обработка исключений
+    futureWithResult.exceptionally(ex -> {
+        System.out.println("Exception occurred: " + ex.getMessage());
+        return "Fallback result";
+    }); // Обрабатывает исключение, возвращая значение по умолчанию
+
+    // Объединение нескольких задач
+    CompletableFuture<String> combined = futureWithResult.thenCombine(
+        CompletableFuture.supplyAsync(() -> "Another result"),
+        (result1, result2) -> result1 + " " + result2
+    ); // Объединяет два результата из разных задач в один результат
+
+    // Выполнение нескольких задач параллельно
+    CompletableFuture<Void> allTasks = CompletableFuture.allOf(
+        CompletableFuture.runAsync(() -> System.out.println("Task 1")),
+        CompletableFuture.runAsync(() -> System.out.println("Task 2"))
+    ); // Запускает несколько задач параллельно и возвращает `CompletableFuture`, который завершится, когда завершатся все задачи
+
+    allTasks.join(); // Блокирует выполнение текущего потока до завершения всех задач
+
+    // Обработка первой завершившейся задачи
+    CompletableFuture<Object> anyTask = CompletableFuture.anyOf(
+        CompletableFuture.supplyAsync(() -> "Task 1"),
+        CompletableFuture.supplyAsync(() -> "Task 2")
+    ); // Завершается при завершении первой из переданных задач и возвращает результат этой задачи
+
+    // Завершение вручную
+    CompletableFuture<String> manualCompletion = new CompletableFuture<>();
+    manualCompletion.complete("Manual result"); // Завершает CompletableFuture вручную с указанным результатом
+
+    manualCompletion.completeExceptionally(new RuntimeException("Manual failure")); // Завершает CompletableFuture с исключением
+
+    // Комбинация асинхронности и пользовательского пула потоков
+    ExecutorService customExecutor = Executors.newFixedThreadPool(3);
+    CompletableFuture.runAsync(() -> {
+        System.out.println("Running in custom executor");
+    }, customExecutor); // Указывает пользовательский пул потоков для выполнения задачи
+
+    // Прерывание или отмена задачи
+    future.cancel(true); // Отменяет задачу. Если задача уже запущена, она может быть прервана, если поддерживает прерывание
+
+    future.isCancelled(); // Проверяет, была ли задача отменена
+    future.isDone(); // Проверяет, завершена ли задача
+```
+
+### ThreadPoolExecutor
+
+`ThreadPoolExecutor` — это мощный класс в Java, предоставляющий гибкий API для создания и настройки пользовательских пулов потоков. Он позволяет точно контролировать параметры пула, такие как количество потоков, размеры очереди и политики отклонения задач.
+
+```java
+    // Создание кастомного пула потоков
+    ThreadPoolExecutor executor = new ThreadPoolExecutor(
+        2, // corePoolSize: минимальное количество потоков, которые остаются активными (даже если они не заняты)
+        4, // maximumPoolSize: максимальное количество потоков, которые могут быть активными одновременно
+        60, // keepAliveTime: время, в течение которого неактивные потоки превышающие corePoolSize, будут уничтожены
+        TimeUnit.SECONDS, // единица измерения времени keepAliveTime
+        new LinkedBlockingQueue<>(10) // очередь задач, которая хранит задачи, ожидающие выполнения
+    );
+
+    executor.execute(() -> {
+        System.out.println("Task executed by " + Thread.currentThread().getName());
+    }); // Запускает задачу в одном из доступных потоков. Если все потоки заняты и очередь заполнена, задача обрабатывается в соответствии с политикой отклонения
+
+    // Политики обработки задач при переполнении очереди
+    executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy()); // Политика по умолчанию. Выбрасывает RejectedExecutionException
+    executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy()); // Задача выполняется в текущем потоке
+    executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy()); // Задача отбрасывается без уведомления
+    executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy()); // Отбрасывается самая старая задача в очереди
+
+    // Ожидание завершения задач
+    executor.shutdown(); // Инициирует мягкое завершение пула потоков
+    executor.awaitTermination(60, TimeUnit.SECONDS); // Ожидает завершения всех задач в течение заданного времени
+
+    // Немедленная остановка пула
+    executor.shutdownNow(); // Прерывает все выполняющиеся задачи и возвращает список задач, которые не были запущены
+
+    // Проверка состояния пула
+    executor.getPoolSize(); // Возвращает текущее количество потоков в пуле
+    executor.getActiveCount(); // Возвращает количество потоков, которые выполняют задачи
+    executor.getQueue().size(); // Возвращает количество задач в очереди
+```
+
+### Сравнительная таблица ExecutorService, CompletableFuture, ThreadPoolExecutor
+
+| Особенность                | ExecutorService                | CompletableFuture            | ThreadPoolExecutor          |
+|----------------------------|--------------------------------|------------------------------|-----------------------------|
+| **Тип**                   | Интерфейс                     | Класс для асинхронных задач | Класс для создания пулов    |
+| **Уровень управления**     | Средний                       | Высокий (упрощённая работа с потоками) | Низкий (гибкость)          |
+| **Асинхронные цепочки**     | Нет                           | Да                           | Нет                         |
+| **Политики управления**    | Предустановленные реализации  | Управляется через `ForkJoinPool` | Полный контроль            |
+| **Примеры использования**  | Обработка задач фиксированным количеством потоков | Асинхронные и цепочные вычисления | Создание кастомного пула   |
+
+---
 
 ## Механизмы синхронизации
 
